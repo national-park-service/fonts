@@ -1,7 +1,7 @@
 {
   "name": "@nps-fonts/cairn",
-  "version": "0.1.0",
-  "description": "Cairn — open-source typeface inspired by U.S. National Park Service signage. Unaffiliated with the NPS.",
+  "version": "0.2.0",
+  "description": "Cairn — open-source typeface inspired by U.S. National Park Service signage. Forked from Public Sans (OFL-1.1). Unaffiliated with the NPS.",
   "keywords": [
     "font",
     "typography",

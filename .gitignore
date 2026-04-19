@@ -46,3 +46,6 @@ specimens/_tmp/
 web/dist/
 web/.cache/
 /pantry
+
+# Cached upstream OFL sources (re-downloadable)
+vendor/

@@ -1,20 +1,12 @@
 #!/usr/bin/env bun
 /**
  * Generate per-family npm packages under packages/<family>/.
- * Each package ships:
- *   - package.json (@nps-fonts/<family>)
- *   - README.md
- *   - LICENSE -> ../../OFL.txt
- *   - index.css with @font-face declarations
- *   - fonts/  with .otf, .woff, .woff2 copies
- *
- * The meta package @nps-fonts/all imports all five.
  */
 
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { ALL_FAMILIES, type FamilyId } from './lib/common.ts'
-import { FAMILIES } from './families/index.ts'
+import { FAMILY_SOURCES, WEIGHT_VALUE } from './sources.ts'
 
 const ROOT = resolve(import.meta.dir, '..')
 const FONTS = resolve(ROOT, 'fonts')
@@ -37,39 +29,58 @@ async function copyDir(src: string, dst: string) {
   }
 }
 
-const WEIGHT_VAL: Record<string, number> = {
-  Light: 300, Regular: 400, Medium: 500, Bold: 700, Black: 900,
-}
-
 function buildCss(id: FamilyId): string {
-  const family = FAMILIES[id]
-  const lines: string[] = [`/* ${family.familyName} — @font-face declarations. */`, '']
-  for (const m of family.masters) {
+  const fam = FAMILY_SOURCES[id]
+  const lines: string[] = [
+    `/* ${fam.newFamilyName} — @font-face declarations. */`,
+    `/* Forked from ${fam.sourceFamily} (${fam.sourceLicense}) by ${fam.sourceAuthor}. */`,
+    '',
+  ]
+  for (const m of fam.sources) {
     const styleSuffix = m.styleName.replace(/\s+/g, '')
-    const base = `${family.fileStem}-${styleSuffix}`
-    const w = WEIGHT_VAL[m.weight] ?? 400
-    lines.push(
-      '@font-face {',
-      `  font-family: "${family.familyName}";`,
-      `  src: url("./fonts/woff2/${base}.woff2") format("woff2"),`,
-      `       url("./fonts/woff/${base}.woff") format("woff"),`,
-      `       url("./fonts/otf/${base}.otf") format("opentype");`,
-      `  font-weight: ${w};`,
-      `  font-style: ${m.italic ? 'italic' : 'normal'};`,
-      '  font-display: swap;',
-      '}',
-      '',
-    )
+    const base = `${fam.newFileStem}-${styleSuffix}`
+    if (m.variable) {
+      const [wMin, wMax] = m.weightRange ?? [100, 900]
+      lines.push(
+        '@font-face {',
+        `  font-family: "${fam.newFamilyName}";`,
+        `  src: url("./fonts/woff2/${base}.woff2") format("woff2-variations"),`,
+        `       url("./fonts/woff2/${base}.woff2") format("woff2"),`,
+        `       url("./fonts/woff/${base}.woff") format("woff"),`,
+        `       url("./fonts/otf/${base}.otf") format("opentype-variations"),`,
+        `       url("./fonts/otf/${base}.otf") format("opentype");`,
+        `  font-weight: ${wMin} ${wMax};`,
+        `  font-style: ${m.italic ? 'italic' : 'normal'};`,
+        '  font-display: swap;',
+        '}',
+        '',
+      )
+    }
+    else {
+      const w = WEIGHT_VALUE[m.weight ?? 'Regular']
+      lines.push(
+        '@font-face {',
+        `  font-family: "${fam.newFamilyName}";`,
+        `  src: url("./fonts/woff2/${base}.woff2") format("woff2"),`,
+        `       url("./fonts/woff/${base}.woff") format("woff"),`,
+        `       url("./fonts/otf/${base}.otf") format("opentype");`,
+        `  font-weight: ${w};`,
+        `  font-style: ${m.italic ? 'italic' : 'normal'};`,
+        '  font-display: swap;',
+        '}',
+        '',
+      )
+    }
   }
   return lines.join('\n')
 }
 
 function buildPkgJson(id: FamilyId): object {
-  const family = FAMILIES[id]
+  const fam = FAMILY_SOURCES[id]
   return {
     name: `@nps-fonts/${id}`,
     version: VERSION,
-    description: `${family.familyName} — open-source typeface inspired by U.S. National Park Service signage. Unaffiliated with the NPS.`,
+    description: `${fam.newFamilyName} — open-source typeface inspired by U.S. National Park Service signage. Forked from ${fam.sourceFamily} (${fam.sourceLicense}). Unaffiliated with the NPS.`,
     keywords: ['font', 'typography', 'webfont', 'ofl', 'national-parks', id],
     license: 'OFL-1.1',
     homepage: `https://github.com/stacksjs/nps-fonts#${id}`,
@@ -88,10 +99,14 @@ function buildPkgJson(id: FamilyId): object {
 }
 
 function buildReadme(id: FamilyId): string {
-  const family = FAMILIES[id]
+  const fam = FAMILY_SOURCES[id]
   return `# @nps-fonts/${id}
 
-${family.familyName} — open-source typeface inspired by U.S. National Park Service signage. Released under the [SIL Open Font License 1.1](./LICENSE). **This project is independent and not affiliated with the U.S. National Park Service.**
+${fam.newFamilyName} — open-source typeface inspired by U.S. National Park Service signage. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
+
+## Heritage
+
+Forked from **[${fam.sourceFamily}](${fam.sourceRepo})** by ${fam.sourceAuthor} (${fam.sourceLicense}). Renamed and re-released under SIL OFL 1.1.
 
 ## Install
 
@@ -105,30 +120,27 @@ bun add @nps-fonts/${id}
 \`\`\`css
 @import "@nps-fonts/${id}";
 
-body { font-family: "${family.familyName}", system-ui, sans-serif; }
+body { font-family: "${fam.newFamilyName}", system-ui, sans-serif; }
 \`\`\`
 
-Or via CDN, no install required:
+Or via CDN:
 
 \`\`\`html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@nps-fonts/${id}/index.css">
 \`\`\`
 
-## Masters
-
-${family.masters.map(m => `- **${m.styleName}** — weight ${WEIGHT_VAL[m.weight]}${m.italic ? ', italic' : ''}`).join('\n')}
-
 ## Files
 
 | Format | Path |
 |---|---|
-| OTF    | \`fonts/otf/${family.fileStem}-*.otf\` |
-| WOFF   | \`fonts/woff/${family.fileStem}-*.woff\` |
-| WOFF2  | \`fonts/woff2/${family.fileStem}-*.woff2\` |
+| OTF    | \`fonts/otf/${fam.newFileStem}-*.otf\` |
+| TTF    | \`fonts/ttf/${fam.newFileStem}-*.ttf\` |
+| WOFF   | \`fonts/woff/${fam.newFileStem}-*.woff\` |
+| WOFF2  | \`fonts/woff2/${fam.newFileStem}-*.woff2\` |
 
 ## Project
 
-Source, full specimen, and the other four families in the suite:
+Source, full specimen, and the other four families:
 <https://github.com/stacksjs/nps-fonts>
 `
 }
@@ -207,7 +219,6 @@ async function main() {
   await buildMetaPackage()
   console.log(`✓ packages/all`)
   console.log(`\nVersion: ${VERSION}`)
-  console.log(`Run \`bun publish\` from each package directory, or use scripts/publish.sh.`)
 }
 
 await main()

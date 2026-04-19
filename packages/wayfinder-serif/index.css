@@ -1,4 +1,5 @@
 /* Wayfinder Serif — @font-face declarations. */
+/* Forked from Zilla Slab (OFL-1.1) by Typotheque (commissioned by Mozilla). */
 
 @font-face {
   font-family: "Wayfinder Serif";
@@ -76,26 +77,6 @@
        url("./fonts/woff/WayfinderSerif-BoldItalic.woff") format("woff"),
        url("./fonts/otf/WayfinderSerif-BoldItalic.otf") format("opentype");
   font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Serif";
-  src: url("./fonts/woff2/WayfinderSerif-Black.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSerif-Black.woff") format("woff"),
-       url("./fonts/otf/WayfinderSerif-Black.otf") format("opentype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Serif";
-  src: url("./fonts/woff2/WayfinderSerif-BlackItalic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSerif-BlackItalic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSerif-BlackItalic.otf") format("opentype");
-  font-weight: 900;
   font-style: italic;
   font-display: swap;
 }

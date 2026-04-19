@@ -1,4 +1,5 @@
 /* Campfire Script — @font-face declarations. */
+/* Forked from Caveat Brush (OFL-1.1) by Pablo Impallari (Impallari Type). */
 
 @font-face {
   font-family: "Campfire Script";
@@ -6,6 +7,6 @@
        url("./fonts/woff/CampfireScript-Regular.woff") format("woff"),
        url("./fonts/otf/CampfireScript-Regular.otf") format("opentype");
   font-weight: 400;
-  font-style: italic;
+  font-style: normal;
   font-display: swap;
 }

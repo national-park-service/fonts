@@ -1,101 +1,14 @@
 /* Wayfinder Sans — @font-face declarations. */
+/* Forked from Big Shoulders Display (OFL-1.1) by Patric King (House Industries) and the Big Shoulders Project Authors. */
 
 @font-face {
   font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Light.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Light.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Light.otf") format("opentype");
-  font-weight: 300;
+  src: url("./fonts/woff2/WayfinderSans-Variable.woff2") format("woff2-variations"),
+       url("./fonts/woff2/WayfinderSans-Variable.woff2") format("woff2"),
+       url("./fonts/woff/WayfinderSans-Variable.woff") format("woff"),
+       url("./fonts/otf/WayfinderSans-Variable.otf") format("opentype-variations"),
+       url("./fonts/otf/WayfinderSans-Variable.otf") format("opentype");
+  font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-LightItalic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-LightItalic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-LightItalic.otf") format("opentype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Regular.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Regular.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Italic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Italic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Italic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Medium.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Medium.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-MediumItalic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-MediumItalic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-MediumItalic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Bold.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Bold.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-BoldItalic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-BoldItalic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-BoldItalic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-Black.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-Black.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-Black.otf") format("opentype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Wayfinder Sans";
-  src: url("./fonts/woff2/WayfinderSans-BlackItalic.woff2") format("woff2"),
-       url("./fonts/woff/WayfinderSans-BlackItalic.woff") format("woff"),
-       url("./fonts/otf/WayfinderSans-BlackItalic.otf") format("opentype");
-  font-weight: 900;
-  font-style: italic;
   font-display: swap;
 }

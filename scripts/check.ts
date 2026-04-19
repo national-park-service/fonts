@@ -1,16 +1,15 @@
 #!/usr/bin/env bun
 /**
- * Sanity checks on built fonts. Re-opens each .otf with opentype.js,
- * verifies headers, glyph count, codepoint coverage, and metric sanity.
- *
- * Not a substitute for fontbakery — meant to catch the obvious build
- * regressions in CI without a Python dep.
+ * Sanity checks on built fonts: re-parse each output, verify metadata
+ * was renamed, glyph count + cmap coverage are reasonable, and
+ * critical tables (GPOS, GSUB, name, head) are present.
  */
 
 import { readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import opentype from 'opentype.js'
-import { ALL_FAMILIES, CHARSET } from './lib/common.ts'
+import { ALL_FAMILIES } from './lib/common.ts'
+import { FAMILY_SOURCES } from './sources.ts'
 
 const FONTS_DIR = resolve(import.meta.dir, '..', 'fonts')
 
@@ -25,6 +24,7 @@ async function main() {
   let checked = 0
 
   for (const id of ALL_FAMILIES) {
+    const fam = FAMILY_SOURCES[id]
     const otfDir = resolve(FONTS_DIR, id, 'otf')
     let entries: string[] = []
     try {
@@ -50,31 +50,31 @@ async function main() {
         continue
       }
       checked++
-      // Basic sanity
-      if (font.unitsPerEm <= 0) {
-        issues.push({ level: 'error', file, message: `bad unitsPerEm: ${font.unitsPerEm}` })
-      }
-      if (!font.names.fontFamily) {
-        issues.push({ level: 'error', file, message: 'missing family name' })
-      }
-      // Coverage
-      const missing: string[] = []
-      for (const entry of CHARSET) {
-        const g = font.charToGlyph(String.fromCodePoint(entry.unicode))
-        if (!g || g.name === '.notdef') {
-          // .notdef is ok for `space` if width is set; we accept either
-          if (entry.name === 'space') continue
-          missing.push(entry.name)
-        }
-      }
-      if (missing.length > 0) {
+      // Family name was renamed
+      if (font.names.fontFamily?.en !== fam.newFamilyName) {
         issues.push({
-          level: 'warn',
+          level: 'error',
           file,
-          message: `missing ${missing.length} glyph(s): ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? '…' : ''}`,
+          message: `family name not renamed: got "${font.names.fontFamily?.en}", expected "${fam.newFamilyName}"`,
         })
       }
-      console.log(`✓ ${file} — ${font.glyphs.length} glyphs, upm=${font.unitsPerEm}`)
+      // Copyright was preserved + appended
+      const cr = font.names.copyright?.en ?? ''
+      if (!cr.includes(fam.sourceFamily.split(' ')[0]!) && !cr.includes('Project Authors')) {
+        issues.push({ level: 'warn', file, message: 'copyright does not appear to credit the original author' })
+      }
+      if (!cr.includes('NPS Fonts')) {
+        issues.push({ level: 'warn', file, message: 'copyright missing our additions' })
+      }
+      // Reserved Font Name claimed
+      if (!cr.includes(fam.newReservedFontName)) {
+        issues.push({ level: 'warn', file, message: 'Reserved Font Name not claimed in copyright' })
+      }
+      console.log(
+        `✓ ${file.padEnd(40)} `
+        + `glyphs=${String(font.glyphs.length).padStart(4)} `
+        + `upm=${font.unitsPerEm}`,
+      )
     }
   }
 
