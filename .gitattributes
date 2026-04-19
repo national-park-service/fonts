@@ -1,0 +1,20 @@
+# Treat binary font formats as binary
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.pdf binary
+*.png binary
+*.jpg binary
+
+# UFO sources are directories of XML — tell git to handle as text
+*.glif text eol=lf
+*.plist text eol=lf
+*.designspace text eol=lf
+
+# Build outputs we want in releases
+fonts/** linguist-vendored
+
+# Generated specimens
+specimens/*.pdf binary

@@ -1,0 +1,35 @@
+{
+  "name": "@nps-fonts/switchback",
+  "version": "0.7.0",
+  "description": "Switchback — Routed-trail display caps with Clean and Rough sibling cuts — backcountry signage. OFL-1.1. Unaffiliated with the U.S. National Park Service.",
+  "keywords": [
+    "font",
+    "typography",
+    "webfont",
+    "ofl",
+    "national-parks",
+    "switchback"
+  ],
+  "license": "OFL-1.1",
+  "homepage": "https://github.com/stacksjs/nps-fonts#switchback",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/nps-fonts.git",
+    "directory": "packages/switchback"
+  },
+  "bugs": "https://github.com/stacksjs/nps-fonts/issues",
+  "main": "index.css",
+  "style": "index.css",
+  "files": [
+    "index.css",
+    "fonts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

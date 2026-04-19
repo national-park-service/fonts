@@ -1,0 +1,35 @@
+{
+  "name": "@nps-fonts/sequoia-sans",
+  "version": "0.7.0",
+  "description": "Sequoia Sans — High-contrast humanist sans for park field guides — variable weight Thin → Wide. OFL-1.1. Unaffiliated with the U.S. National Park Service.",
+  "keywords": [
+    "font",
+    "typography",
+    "webfont",
+    "ofl",
+    "national-parks",
+    "sequoia-sans"
+  ],
+  "license": "OFL-1.1",
+  "homepage": "https://github.com/stacksjs/nps-fonts#sequoia-sans",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/nps-fonts.git",
+    "directory": "packages/sequoia-sans"
+  },
+  "bugs": "https://github.com/stacksjs/nps-fonts/issues",
+  "main": "index.css",
+  "style": "index.css",
+  "files": [
+    "index.css",
+    "fonts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

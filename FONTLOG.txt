@@ -1,0 +1,91 @@
+FONTLOG for NPS Fonts
+=====================
+
+This file provides detailed information on each font family in the
+nps-fonts project.
+
+PROJECT
+-------
+NPS Fonts — original open-source typefaces inspired by U.S. National
+Park Service signage. Independent project, not affiliated with the NPS.
+
+All four families are drawn from scratch using opentype.js (no OFL
+forks). They share a visual system tuned for NPS wayfinding aesthetics:
+routed-redwood display caps, old-style serif text, rounded trailhead
+script, and a pictograph icon set.
+
+
+CHANGELOG
+---------
+
+25 Apr 2026 (NPS Fonts contributors) — v0.8.0 — extracted-source families
+- REPLACED Redwood Serif's parametric drawing with extracted-source
+  geometry from a reference serif typeface (Regular master for
+  lowercase, Wide master for uppercase, merged into one font). 107
+  glyphs (was 77).
+- REPLACED Campmate Script's parametric drawing with extracted-source
+  geometry from a reference outdoor-script typeface. 124 glyphs (was
+  82). Now ships 19 OpenType liga ligatures driven by the source's
+  ligature glyphs (oss, or, oz, ax, ux, ex, zz, bs, br, ox, ix, er,
+  yx, ws, wr, nx, ll, rx, os) reconstructed via opentype.js GSUB
+  substitution since ts-font-editor doesn't yet model GSUB tables.
+- ADDED Sequoia Sans — humanist display sans for park field guides
+  with four cuts (Thin / Light / Regular / Wide). Lowercase sourced
+  from a reference humanist-sans Regular master, uppercase from
+  Thin/Light/Wide masters paired per-cut. 79–105 glyphs per cut.
+- ADDED Switchback — routed-trail display caps with two sibling
+  cuts (Regular = clean machine-routed, Rough = chiseled). 139–140
+  glyphs per cut. Rough is published as a sibling family
+  ("Switchback Rough") in CSS.
+- Generalised scripts/_extract-source.ts to accept any TTF or OTF
+  source via SOURCE / OUT env vars. OTF inputs flow through
+  ts-font-editor's otf2ttfobject (CFF charstring → TT quadratic).
+- Added scripts/lib/extracted.ts — shared helpers for loading
+  extracted JSON sources, rounding float coordinates, merging
+  uppercase-from-Wide-into-lowercase, branding name tables, and
+  emitting OTF/TTF/WOFF/WOFF2 in one call.
+- Reworked scripts/pack.ts to discover every static cut on disk
+  and emit per-cut @font-face blocks with appropriate font-weight
+  and font-stretch. Style names with no clean weight/stretch
+  mapping (e.g. "Rough") publish under a sibling family name.
+
+20 Apr 2026 (NPS Fonts contributors) — v0.7.0 — original parametric release
+- REMOVED all OFL-forked families (Wayfinder Sans, Wayfinder Serif,
+  Campfire Script, Switchback, Cairn, Routemark Sans, Trailmark Script).
+- ADDED NPS 2026 (display caps, all-caps, routed-redwood NPS
+  1935-era signage aesthetic). 51 glyphs.
+- ADDED Redwood Serif (old-style / transitional serif with stroke
+  contrast and bracketed serifs, both cases). 77 glyphs.
+- ADDED Campmate Script (rounded upright script with 5 OpenType liga
+  ligatures: oo, ll, tt, ee, ss). 82 glyphs.
+- RETAINED NPS Symbols (23 pictographs).
+- Reworked scripts/pack.ts, scripts/web.ts, scripts/check.ts,
+  scripts/render.ts to drive from a single FAMILY_DISPLAY metadata
+  record in scripts/lib/common.ts. Removed scripts/sources.ts,
+  scripts/fork.ts, and associated sfnt-editing helpers since there
+  are no forks to manage.
+- Fixed a fill-rule / winding inconsistency in halfRing('top') vs.
+  halfRing('bottom') that had caused stroke cancellation in the S
+  glyph when a diagonal connector crossed a half-arc counter.
+- Fixed ligature GSUB emission: opentype.js's substitution.add
+  requires numeric glyph indices, not names, or the resulting
+  ligature entries in the GSUB table all resolve to glyph 0.
+
+
+LICENSE
+-------
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+https://openfontlicense.org
+
+Reserved Font Names: "NPS 2026", "Redwood Serif",
+"Campmate Script", "NPS Symbols".
+
+
+ACKNOWLEDGEMENTS
+----------------
+NPS Fonts contributors — original parametric glyph drawings.
+opentype.js (https://github.com/opentypejs/opentype.js) — OpenType
+font construction and serialization.
+wawoff2 — WOFF2 compression.
+@resvg/resvg-js — specimen PNG rendering.

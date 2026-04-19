@@ -1,0 +1,21 @@
+/* Switchback — Routed-trail display caps with Clean and Rough sibling cuts — backcountry signage. */
+
+@font-face {
+  font-family: "Switchback";
+  src: url("./fonts/woff2/Switchback-Regular.woff2") format("woff2"),
+       url("./fonts/woff/Switchback-Regular.woff") format("woff"),
+       url("./fonts/otf/Switchback-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switchback Rough";
+  src: url("./fonts/woff2/Switchback-Rough.woff2") format("woff2"),
+       url("./fonts/woff/Switchback-Rough.woff") format("woff"),
+       url("./fonts/otf/Switchback-Rough.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
