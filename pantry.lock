@@ -1,0 +1,111 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 2,
+  "workspaces": {
+    "": {
+      "name": "@nps-fonts/monorepo",
+      "dependencies": {
+        "opentype.js": "^1.3.4",
+        "wawoff2": "^2.0.1"
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "@types/opentype.js": "^1.3.8",
+        "typescript": "^5.6.0"
+      }
+    },
+    "packages/all": {
+      "name": "@nps-fonts/all",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nps-fonts/cairn": "0.1.0",
+        "@nps-fonts/campfire-script": "0.1.0",
+        "@nps-fonts/switchback": "0.1.0",
+        "@nps-fonts/wayfinder-sans": "0.1.0",
+        "@nps-fonts/wayfinder-serif": "0.1.0"
+      }
+    },
+    "packages/cairn": {
+      "name": "@nps-fonts/cairn",
+      "version": "0.1.0"
+    },
+    "packages/campfire-script": {
+      "name": "@nps-fonts/campfire-script",
+      "version": "0.1.0"
+    },
+    "packages/switchback": {
+      "name": "@nps-fonts/switchback",
+      "version": "0.1.0"
+    },
+    "packages/wayfinder-sans": {
+      "name": "@nps-fonts/wayfinder-sans",
+      "version": "0.1.0"
+    },
+    "packages/wayfinder-serif": {
+      "name": "@nps-fonts/wayfinder-serif",
+      "version": "0.1.0"
+    }
+  },
+  "packages": {
+    "@nps-fonts/cairn@0.1.0": {
+      "name": "@nps-fonts/cairn",
+      "version": "0.1.0",
+      "source": "npm"
+    },
+    "@nps-fonts/campfire-script@0.1.0": {
+      "name": "@nps-fonts/campfire-script",
+      "version": "0.1.0",
+      "source": "npm"
+    },
+    "@nps-fonts/switchback@0.1.0": {
+      "name": "@nps-fonts/switchback",
+      "version": "0.1.0",
+      "source": "npm"
+    },
+    "@nps-fonts/wayfinder-sans@0.1.0": {
+      "name": "@nps-fonts/wayfinder-sans",
+      "version": "0.1.0",
+      "source": "npm"
+    },
+    "@nps-fonts/wayfinder-serif@0.1.0": {
+      "name": "@nps-fonts/wayfinder-serif",
+      "version": "0.1.0",
+      "source": "npm"
+    },
+    "@types/bun@latest": {
+      "name": "@types/bun",
+      "version": "latest",
+      "source": "npm",
+      "dependencies": {
+        "bun-types": "1.3.12"
+      }
+    },
+    "@types/opentype.js@^1.3.8": {
+      "name": "@types/opentype.js",
+      "version": "^1.3.8",
+      "source": "npm"
+    },
+    "opentype.js@^1.3.4": {
+      "name": "opentype.js",
+      "version": "^1.3.4",
+      "source": "npm"
+    },
+    "typescriptlang.org@^5.6.0": {
+      "name": "typescriptlang.org",
+      "version": "^5.6.0",
+      "source": "npm"
+    },
+    "wawoff2@^2.0.1": {
+      "name": "wawoff2",
+      "version": "^2.0.1",
+      "source": "npm",
+      "dependencies": {
+        "argparse": "^2.0.1"
+      },
+      "bin": {
+        "woff2_compress.js": "./bin/woff2_compress.js",
+        "woff2_decompress.js": "./bin/woff2_decompress.js"
+      }
+    }
+  }
+}

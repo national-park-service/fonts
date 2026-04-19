@@ -14,7 +14,7 @@ Open-source typefaces inspired by U.S. National Park Service signage, posters, a
 | **Switchback**       | Rugged condensed slab display  | Regular                                  | Posters, display                  |
 | **Cairn**            | Bold geometric all-caps        | Regular · Bold                           | Signs, badges, wayfinding         |
 
-All families ship in **`.otf`**, **`.woff`**, and **`.woff2`**.
+All families ship in **`.otf`**, **`.woff`**, and **`.woff2`**, with **Latin-1 Supplement** coverage, **curated kerning**, and **standard ligatures** (`fi`, `fl`) on the Wayfinder pair.
 
 ## Install
 
@@ -98,4 +98,15 @@ This is a long-term project — type design takes years. Pull requests welcome a
 
 ## Status
 
-**v0.0.1 — early seed.** The current outlines are procedurally generated as a starting point. Real type design is iterative work; expect significant refinement family-by-family. See [`FONTLOG.txt`](./FONTLOG.txt) for per-family changelog.
+**v0.1.0 — early access.** Outlines are procedurally generated with stress-modulated bowls, bracketed serifs, optical overshoots, kerning, and Latin-1 coverage — meaningfully past the v0.0.1 stick-figure stage but still placeholder relative to a typeface that has been hand-drawn by a type designer over months. The infrastructure (build, kerning, features, packaging, CI, web specimen) is production-quality; the outlines are the part that benefits most from human iteration.
+
+What's not yet here:
+
+- True cursive italics for the full alphabet (only a/e/f/g/k get italic-specific forms; the rest is shear-only).
+- True script forms with stroke connections in Campfire Script.
+- Variable fonts (would need CFF2 writing, not in opentype.js v1.x).
+- Hinting (would need ttfautohint, a binary tool).
+- Class-based / contextual kerning (only flat pair kerning is wired).
+- Latin-Extended-A, Cyrillic, Greek, etc.
+
+See [`FONTLOG.txt`](./FONTLOG.txt) for the full changelog.

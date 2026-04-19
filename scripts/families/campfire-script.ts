@@ -1,13 +1,15 @@
 /**
  * Campfire Script — casual brush script, single weight.
  *
- * v0.0.1 uses the default sans drawers with a 16-degree forward slant
- * applied as a post-shear in the font writer. Connection between
- * letters / true script forms are TODO.
+ * v0.1 uses sheared sans skeletons with brush-flavored overrides for
+ * the most distinctive script glyphs. True brush forms / connections
+ * are still TODO and the work of an actual script designer.
  */
 
-import { CHARSET, FAMILY_DISPLAY, STROKE } from '../lib/common.ts'
-import { DEFAULT_DRAWERS, widthFor } from '../lib/letters.ts'
+import { buildGlyphs } from '../lib/build-glyphs.ts'
+import { FAMILY_DISPLAY, STROKE } from '../lib/common.ts'
+import { SCRIPT_KERNING } from '../lib/kerning.ts'
+import { ITALIC_OVERRIDES } from '../lib/letters.ts'
 import type { FamilySpec, MasterSpec } from '../lib/types.ts'
 
 const DISPLAY = FAMILY_DISPLAY['campfire-script']
@@ -16,7 +18,7 @@ function buildMaster(): MasterSpec {
   const stroke = STROKE.Medium
   const ctx = {
     stroke,
-    italic: true, // shear applied at write time
+    italic: true,
     capHeight: 700,
     xHeight: 500,
     ascenderHeight: 820,
@@ -25,21 +27,20 @@ function buildMaster(): MasterSpec {
     sidebearing: 40,
     slant: (16 * Math.PI) / 180,
     condense: 0.95,
+    overshoot: Math.max(stroke * 0.2, 14),
+    contrast: 0.85,
+    bracketed: false,
+    geometric: false,
   }
   return {
     styleName: 'Regular',
     weight: 'Regular',
     italic: true,
     ctx,
-    glyphs: CHARSET.map((entry) => {
-      const drawer = DEFAULT_DRAWERS[entry.name]
-      if (!drawer) throw new Error(`Campfire Script missing drawer for ${entry.name}`)
-      return {
-        name: entry.name,
-        unicode: entry.unicode,
-        advanceWidth: widthFor(entry.name, ctx),
-        draw: drawer,
-      }
+    glyphs: buildGlyphs(ctx, {
+      italic: true,
+      // Use italic structural overrides for distinctive letters
+      overrides: { ...ITALIC_OVERRIDES },
     }),
   }
 }
@@ -53,7 +54,7 @@ export const family: FamilySpec = {
   designerURL: 'https://github.com/stacksjs/nps-fonts',
   manufacturer: 'NPS Fonts',
   vendorID: 'NPSF',
-  version: '0.0.1',
+  version: '0.1.0',
   license: 'This Font Software is licensed under the SIL Open Font License, Version 1.1.',
   licenseURL: 'https://openfontlicense.org',
   unitsPerEm: 1000,
@@ -61,5 +62,6 @@ export const family: FamilySpec = {
   descender: -220,
   capHeight: 700,
   xHeight: 500,
+  kerningPairs: SCRIPT_KERNING,
   masters: [buildMaster()],
 }

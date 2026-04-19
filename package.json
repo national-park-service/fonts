@@ -1,6 +1,6 @@
 {
   "name": "@nps-fonts/monorepo",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Open-source typefaces inspired by U.S. National Park Service signage",
   "license": "OFL-1.1",

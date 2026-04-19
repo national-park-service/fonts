@@ -15,6 +15,29 @@ with the NPS. See README.md and DISCLAIMER.md for details.
 CHANGELOG
 ---------
 
+19 Apr 2026 (NPS Fonts contributors) — v0.1.0
+- Substantially refined parametric outline construction: stress-modulated
+  bowls with optical overshoots, bracketed serifs (Wayfinder Serif),
+  pure geometric monoline (Cairn), heavy slab serifs (Switchback).
+- Per-family voice differentiation via DrawContext flags (contrast,
+  bracketed, geometric, condense, overshoot).
+- Latin-1 Supplement coverage: Á É Í Ó Ú · à è ì ò ù · ñÑ · ç ß · ø ø
+  · ¡ ¿ © ® ° ± § ¶ £ ¥ ¢ µ etc. via composite glyphs.
+- Curated kerning pairs: ~100 pairs per family, scaled per-weight,
+  written through a hand-rolled `kern` table injector (opentype.js
+  doesn't write the legacy table).
+- OpenType `liga` feature: standard fi / fl ligatures wired through
+  GSUB.
+- Italic letterform overrides for distinctive glyphs (a, e, f, g, k)
+  in addition to the global shear.
+- Glyph cmap deduplication: NBSP shares the space glyph rather than
+  duplicating an empty outline.
+- Polished specimen site: type tester, character map, pairing
+  showcases, copy-to-clipboard install snippets.
+- Expanded test suite: 113 checks across artifact existence, parse
+  integrity, Latin-1 coverage, kerning presence, ligature wiring,
+  and metric consistency across weights.
+
 18 Apr 2026 (NPS Fonts contributors) — v0.0.1
 - Initial seed release.
 - Five families introduced: Wayfinder Sans, Wayfinder Serif, Campfire

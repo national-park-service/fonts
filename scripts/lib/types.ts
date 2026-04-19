@@ -14,7 +14,8 @@ export type GlyphDraw = (path: Path, ctx: DrawContext) => void
 
 export interface GlyphSpec {
   name: string
-  unicode: number | undefined
+  /** Single codepoint or array (for cases like NBSP sharing the space glyph). */
+  unicode: number | number[] | undefined
   advanceWidth: number
   draw: GlyphDraw
 }
@@ -25,6 +26,8 @@ export interface MasterSpec {
   italic: boolean
   glyphs: GlyphSpec[]
   ctx: DrawContext
+  /** Optional per-master kerning override (else FamilySpec.kerningPairs is used). */
+  kerningPairs?: Record<string, number>
 }
 
 export interface FamilySpec {
@@ -50,4 +53,6 @@ export interface FamilySpec {
   xHeight: number
   /** All masters in this family. */
   masters: MasterSpec[]
+  /** Optional family-wide kerning. Keys: "leftname,rightname", value: em-unit shift (negative tightens). */
+  kerningPairs?: Record<string, number>
 }

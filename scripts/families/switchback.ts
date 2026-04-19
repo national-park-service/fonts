@@ -2,8 +2,9 @@
  * Switchback — rugged condensed slab display, single weight.
  */
 
-import { CHARSET, FAMILY_DISPLAY, STROKE } from '../lib/common.ts'
-import { DEFAULT_DRAWERS, widthFor } from '../lib/letters.ts'
+import { buildGlyphs } from '../lib/build-glyphs.ts'
+import { FAMILY_DISPLAY, STROKE } from '../lib/common.ts'
+import { DISPLAY_KERNING } from '../lib/kerning.ts'
 import type { FamilySpec, MasterSpec } from '../lib/types.ts'
 
 const DISPLAY = FAMILY_DISPLAY.switchback
@@ -17,27 +18,23 @@ function buildMaster(): MasterSpec {
     xHeight: 520,
     ascenderHeight: 800,
     descenderDepth: -180,
-    serifLen: stroke * 2.4,
-    serifThickness: Math.max(stroke * 0.7, 50),
+    // Heavy slabs, not bracketed — the wood-type feel
+    serifLen: stroke * 2.6,
+    serifThickness: Math.max(stroke * 0.75, 60),
     sidebearing: 50,
     slant: 0,
-    condense: 0.78, // condensed
+    condense: 0.78,
+    overshoot: Math.max(stroke * 0.14, 10),
+    contrast: 0.95,
+    bracketed: false,
+    geometric: false,
   }
   return {
     styleName: 'Regular',
     weight: 'Bold',
     italic: false,
     ctx,
-    glyphs: CHARSET.map((entry) => {
-      const drawer = DEFAULT_DRAWERS[entry.name]
-      if (!drawer) throw new Error(`Switchback missing drawer for ${entry.name}`)
-      return {
-        name: entry.name,
-        unicode: entry.unicode,
-        advanceWidth: widthFor(entry.name, ctx),
-        draw: drawer,
-      }
-    }),
+    glyphs: buildGlyphs(ctx),
   }
 }
 
@@ -50,7 +47,7 @@ export const family: FamilySpec = {
   designerURL: 'https://github.com/stacksjs/nps-fonts',
   manufacturer: 'NPS Fonts',
   vendorID: 'NPSF',
-  version: '0.0.1',
+  version: '0.1.0',
   license: 'This Font Software is licensed under the SIL Open Font License, Version 1.1.',
   licenseURL: 'https://openfontlicense.org',
   unitsPerEm: 1000,
@@ -58,5 +55,6 @@ export const family: FamilySpec = {
   descender: -180,
   capHeight: 720,
   xHeight: 520,
+  kerningPairs: DISPLAY_KERNING,
   masters: [buildMaster()],
 }

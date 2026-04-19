@@ -45,3 +45,4 @@ specimens/_tmp/
 # Web build
 web/dist/
 web/.cache/
+/pantry

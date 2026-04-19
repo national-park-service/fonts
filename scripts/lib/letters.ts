@@ -1,14 +1,16 @@
 /**
- * Parametric letter library. One drawer per glyph, configured via the
- * DrawContext passed in. The same drawers are used by all five families;
- * the per-family scripts only override individual glyphs when they need
- * a different shape (e.g. script forms, all-caps shortcuts).
+ * Parametric letter library — v2.
+ *
+ * Each glyph is drawn as a compound path: an outer contour plus zero or
+ * more inner contours (counters). All contours use proper bezier curves
+ * for round forms, with optical overshoots on circular glyphs and
+ * humanist construction (slight stress, rounded joints).
  *
  * Geometry conventions
  * --------------------
- * Origin: glyph baseline at y=0, advance starts at x=0.
- * The drawer uses the cap_height, x_height, stroke from ctx.
- * It does NOT set advanceWidth — that's set by the caller in the GlyphSpec.
+ *   Origin: glyph baseline at y=0, advance starts at x=0.
+ *   The drawer reads cap_height, x_height, stroke from ctx.
+ *   It does NOT set advanceWidth — the caller does that via widthFor().
  */
 
 import type { Path } from 'opentype.js'
@@ -19,7 +21,7 @@ import {
   KAPPA,
   polygon,
   rect,
-  roundRect,
+  ring,
   slab,
   strokeH,
   strokeLine,
@@ -27,7 +29,10 @@ import {
 } from './primitives.ts'
 import type { DrawContext, GlyphDraw } from './types.ts'
 
-// Default per-master geometry. Per-family can override via ctx.
+// ---------------------------------------------------------------------------
+// Geometry helper
+// ---------------------------------------------------------------------------
+
 function geom(ctx: DrawContext) {
   const stroke = ctx.stroke
   const cap = (ctx.capHeight as number | undefined) ?? CAP_HEIGHT
@@ -36,68 +41,100 @@ function geom(ctx: DrawContext) {
   const descender = (ctx.descenderDepth as number | undefined) ?? -200
   const condense = (ctx.condense as number | undefined) ?? 1
   const serifLen = (ctx.serifLen as number | undefined) ?? 0
-  const serifThickness = (ctx.serifThickness as number | undefined) ?? Math.max(stroke * 0.6, 30)
+  const serifThickness = (ctx.serifThickness as number | undefined) ?? Math.max(stroke * 0.55, 28)
   const sidebearing = (ctx.sidebearing as number | undefined) ?? 60
-  const slant = (ctx.slant as number | undefined) ?? 0 // radians
-  return { stroke, cap, xh, ascender, descender, condense, serifLen, serifThickness, sidebearing, slant }
+  const slant = (ctx.slant as number | undefined) ?? 0
+  // Optical overshoot for round glyphs (% of stroke).
+  const overshoot = (ctx.overshoot as number | undefined) ?? Math.max(stroke * 0.18, 12)
+  // Contrast: ratio of horizontal to vertical stroke (1 = monoline, <1 = thinner horizontals).
+  const contrast = (ctx.contrast as number | undefined) ?? 1
+  // True if family has bracketed serifs.
+  const bracketed = (ctx.bracketed as boolean | undefined) ?? false
+  // True if family is geometric (no stress modulation, no overshoot).
+  const geometric = (ctx.geometric as boolean | undefined) ?? false
+  return {
+    stroke, cap, xh, ascender, descender, condense, serifLen, serifThickness,
+    sidebearing, slant, overshoot: geometric ? 0 : overshoot, contrast, bracketed, geometric,
+  }
 }
 
+const hStroke = (g: ReturnType<typeof geom>) => Math.max(g.stroke * g.contrast, g.stroke * 0.4)
+
 // ---------------------------------------------------------------------------
-// Helpers
+// Serif helpers
 // ---------------------------------------------------------------------------
 
 function topSerif(p: Path, x: number, y: number, ctx: DrawContext): void {
   const g = geom(ctx)
   if (g.serifLen <= 0) return
-  rect(p, x - g.serifLen / 2, y - g.serifThickness, g.serifLen, g.serifThickness)
+  if (g.bracketed) {
+    // Bracketed serif — slight curve from stem to slab edge
+    const halfL = g.serifLen / 2
+    const t = g.serifThickness
+    const k = t * 0.6
+    p.moveTo(x - halfL, y)
+    p.lineTo(x + halfL, y)
+    p.lineTo(x + halfL, y - t)
+    p.curveTo(x + g.stroke / 2 + k, y - t, x + g.stroke / 2, y - t + k, x + g.stroke / 2, y - t * 1.2)
+    p.lineTo(x - g.stroke / 2, y - t * 1.2)
+    p.curveTo(x - g.stroke / 2, y - t + k, x - halfL + k, y - t, x - halfL, y - t)
+    p.close()
+  }
+  else {
+    rect(p, x - g.serifLen / 2, y - g.serifThickness, g.serifLen, g.serifThickness)
+  }
 }
+
 function bottomSerif(p: Path, x: number, y: number, ctx: DrawContext): void {
   const g = geom(ctx)
   if (g.serifLen <= 0) return
-  rect(p, x - g.serifLen / 2, y, g.serifLen, g.serifThickness)
+  if (g.bracketed) {
+    const halfL = g.serifLen / 2
+    const t = g.serifThickness
+    const k = t * 0.6
+    p.moveTo(x - halfL, y)
+    p.lineTo(x - halfL, y + t)
+    p.curveTo(x - halfL + k, y + t, x - g.stroke / 2, y + t - k, x - g.stroke / 2, y + t * 1.2)
+    p.lineTo(x + g.stroke / 2, y + t * 1.2)
+    p.curveTo(x + g.stroke / 2, y + t - k, x + halfL - k, y + t, x + halfL, y + t)
+    p.lineTo(x + halfL, y)
+    p.close()
+  }
+  else {
+    rect(p, x - g.serifLen / 2, y, g.serifLen, g.serifThickness)
+  }
 }
 
-/** Standard advance width helpers — used by the per-family spec to size each glyph. */
-export function advance(width: number, ctx: DrawContext): number {
-  const g = geom(ctx)
-  return Math.round(width * g.condense + g.sidebearing * 2)
-}
+// ---------------------------------------------------------------------------
+// Width tables
+// ---------------------------------------------------------------------------
 
-// Width returned to the caller when registering a glyph; depends only on geom params.
 export function widthFor(name: string, ctx: DrawContext): number {
   const g = geom(ctx)
   const w = baseWidth(name, ctx) * g.condense
   return Math.round(w + g.sidebearing * 2)
 }
 
-// Base width per-glyph (without sidebearings or condense) used both for sizing
-// and as input to the drawers (so the visible shape sits inside [0, baseWidth]).
 function baseWidth(name: string, ctx: DrawContext): number {
   const g = geom(ctx)
   const s = g.stroke
-  // Defaults derived from cap_height to keep proportions consistent.
   const wide = g.cap * 0.95
   const med = g.cap * 0.78
   const narrow = g.cap * 0.55
-  const veryNarrow = g.cap * 0.32
   // Lookup with sensible defaults.
   const map: Record<string, number> = {
-    // uppercase
-    A: med, B: med, C: med, D: med, E: narrow + s, F: narrow + s,
-    G: med, H: med, I: s + 80, J: narrow + s, K: med, L: narrow + s,
+    A: med, B: med, C: med, D: med, E: narrow + s * 0.5, F: narrow + s * 0.5,
+    G: med, H: med, I: s + 80, J: narrow + s * 0.5, K: med, L: narrow + s * 0.5,
     M: wide, N: med, O: wide * 0.92, P: med, Q: wide * 0.92, R: med,
     S: med, T: med, U: med, V: med, W: wide, X: med, Y: med, Z: med,
-    // lowercase
-    a: med * 0.85, b: med * 0.8, c: med * 0.8, d: med * 0.8, e: med * 0.8,
-    f: narrow, g: med * 0.8, h: med * 0.8, i: s + 40, j: narrow,
-    k: med * 0.8, l: s + 40, m: wide * 0.95, n: med * 0.8, o: med * 0.85,
-    p: med * 0.8, q: med * 0.8, r: narrow + s, s: med * 0.7, t: narrow,
-    u: med * 0.8, v: med * 0.85, w: wide * 0.95, x: med * 0.85, y: med * 0.85,
+    a: med * 0.85, b: med * 0.82, c: med * 0.8, d: med * 0.82, e: med * 0.82,
+    f: narrow * 1.05, g: med * 0.82, h: med * 0.82, i: s + 40, j: narrow,
+    k: med * 0.82, l: s + 40, m: wide * 0.95, n: med * 0.82, o: med * 0.85,
+    p: med * 0.82, q: med * 0.82, r: narrow * 1.0, s: med * 0.7, t: narrow,
+    u: med * 0.82, v: med * 0.85, w: wide * 0.95, x: med * 0.85, y: med * 0.85,
     z: med * 0.7,
-    // digits
     zero: med, one: narrow, two: med, three: med, four: med, five: med,
     six: med, seven: med, eight: med, nine: med,
-    // punctuation
     space: g.cap * 0.5,
     exclam: s + 30, period: s + 20, comma: s + 30, colon: s + 20, semicolon: s + 30,
     hyphen: med * 0.5, underscore: med * 0.7, slash: med * 0.5, backslash: med * 0.5,
@@ -115,6 +152,28 @@ function baseWidth(name: string, ctx: DrawContext): number {
 }
 
 // ---------------------------------------------------------------------------
+// Round form helpers — proper humanist bowls with stress + overshoot
+// ---------------------------------------------------------------------------
+
+/** Outer + inner bowl forming a closed counter; respects contrast. */
+function bowl(
+  p: Path,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  vStroke: number,
+  hStrokeW: number,
+  overshoot: number,
+): void {
+  // Outer ellipse with overshoot
+  ellipse(p, cx, cy, rx, ry + overshoot)
+  // Inner ellipse: the counter offset by per-axis stroke width
+  // The horizontal opening (top/bottom) is hStroke; vertical (left/right) is vStroke
+  ellipse(p, cx, cy, rx - vStroke, ry + overshoot - hStrokeW, { hole: true })
+}
+
+// ---------------------------------------------------------------------------
 // Uppercase letters
 // ---------------------------------------------------------------------------
 
@@ -126,34 +185,43 @@ const uppers: Record<string, GlyphDraw> = {
     const apex = x0 + w / 2
     const left = x0
     const right = x0 + w
-    const bar = g.cap * 0.42
+    const bar = g.cap * 0.4
     strokeLine(p, left, 0, apex, g.cap, g.stroke)
     strokeLine(p, apex, g.cap, right, 0, g.stroke)
-    // crossbar
-    const bx1 = left + (apex - left) * (bar / g.cap)
-    const bx2 = right - (right - apex) * (bar / g.cap)
-    strokeH(p, bx1 - g.stroke / 4, bar, bx2 - bx1 + g.stroke / 2, g.stroke * 0.7)
-    bottomSerif(p, left + g.stroke / 2, 0, ctx)
-    bottomSerif(p, right - g.stroke / 2, 0, ctx)
+    // Crossbar — slightly thinner than diagonals
+    const bx1 = left + (apex - left) * (bar / g.cap) + g.stroke * 0.2
+    const bx2 = right - (right - apex) * (bar / g.cap) - g.stroke * 0.2
+    rect(p, bx1, bar - hStroke(g) / 2, bx2 - bx1, hStroke(g))
+    bottomSerif(p, left + g.stroke / 4, 0, ctx)
+    bottomSerif(p, right - g.stroke / 4, 0, ctx)
   },
   B: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('B', ctx)
     const x0 = g.sidebearing
-    const stem = x0
+    const stem = x0 + g.stroke / 2
     const right = x0 + w
-    strokeV(p, stem + g.stroke / 2, 0, g.cap, g.stroke)
-    // top bowl
-    const midY = g.cap / 2 - g.stroke / 4
-    arc(p, stem + g.stroke / 2, (g.cap + midY) / 2, (right - stem) - g.stroke, (g.cap - midY) / 2, g.stroke, 'right')
-    // bottom bowl
-    arc(p, stem + g.stroke / 2, midY / 2, (right - stem) - g.stroke * 0.8, midY / 2, g.stroke, 'right')
-    // small caps to close
-    strokeH(p, stem, g.cap - g.stroke / 2, (right - stem) - g.stroke * 0.5, g.stroke)
-    strokeH(p, stem, g.stroke / 2, (right - stem) - g.stroke * 0.4, g.stroke)
-    strokeH(p, stem, midY, (right - stem) - g.stroke * 0.6, g.stroke * 0.85)
-    topSerif(p, stem + g.stroke / 2, g.cap, ctx)
-    bottomSerif(p, stem + g.stroke / 2, 0, ctx)
+    const midY = g.cap / 2
+    const upperRy = (g.cap - midY) / 2
+    const lowerRy = midY / 2
+    // Stem
+    strokeV(p, stem, 0, g.cap, g.stroke)
+    // Upper bowl
+    const upperCx = stem
+    const upperCy = midY + upperRy
+    const upperRx = (right - stem) - g.stroke * 0.3
+    arc(p, upperCx, upperCy, upperRx, upperRy + g.overshoot * 0.3, g.stroke, 'right')
+    // Lower bowl (slightly larger)
+    const lowerCx = stem
+    const lowerCy = lowerRy
+    const lowerRx = (right - stem)
+    arc(p, lowerCx, lowerCy, lowerRx, lowerRy + g.overshoot * 0.3, g.stroke, 'right')
+    // Top, middle, bottom horizontal closures
+    rect(p, x0, g.cap - hStroke(g), upperRx, hStroke(g))
+    rect(p, x0, midY - hStroke(g) * 0.45, lowerRx - g.stroke * 0.3, hStroke(g) * 0.9)
+    rect(p, x0, 0, lowerRx, hStroke(g))
+    topSerif(p, stem, g.cap, ctx)
+    bottomSerif(p, stem, 0, ctx)
   },
   C: (p, ctx) => {
     const g = geom(ctx)
@@ -163,35 +231,48 @@ const uppers: Record<string, GlyphDraw> = {
     const cy = g.cap / 2
     const rx = w / 2
     const ry = g.cap / 2
-    // outer
-    ellipse(p, cx, cy, rx, ry)
-    ellipse(p, cx, cy, rx - g.stroke, ry - g.stroke, { hole: true })
-    // open the right side: cover with a rectangle (not a true approach but visually OK)
-    rect(p, cx + rx * 0.35, cy - ry * 0.45, rx, ry * 0.9)
+    const hs = hStroke(g)
+    // Outer with overshoot
+    ellipse(p, cx, cy, rx, ry + g.overshoot * 0.6)
+    ellipse(p, cx, cy, rx - g.stroke, ry + g.overshoot * 0.6 - hs, { hole: true })
+    // Open the right with a wedge that tapers
+    polygon(p, [
+      { x: cx + rx * 0.05, y: cy - ry * 0.45 },
+      { x: cx + rx + g.stroke, y: cy - ry * 0.45 },
+      { x: cx + rx + g.stroke, y: cy + ry * 0.45 },
+      { x: cx + rx * 0.05, y: cy + ry * 0.45 },
+    ])
+    // Add small terminals (beaks) at the top and bottom of the opening
+    const beakY = ry * 0.45
+    rect(p, cx + rx * 0.02, cy + beakY - hs, hs * 0.8, hs)
+    rect(p, cx + rx * 0.02, cy - beakY, hs * 0.8, hs)
   },
   D: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('D', ctx)
     const x0 = g.sidebearing
-    const stem = x0
+    const stem = x0 + g.stroke / 2
     const right = x0 + w
-    strokeV(p, stem + g.stroke / 2, 0, g.cap, g.stroke)
-    // semicircle outline
-    arc(p, stem + g.stroke / 2, g.cap / 2, (right - stem) - g.stroke, g.cap / 2, g.stroke, 'right')
-    strokeH(p, stem, g.cap - g.stroke / 2, (right - stem) - g.stroke * 0.5, g.stroke)
-    strokeH(p, stem, g.stroke / 2, (right - stem) - g.stroke * 0.5, g.stroke)
-    topSerif(p, stem + g.stroke / 2, g.cap, ctx)
-    bottomSerif(p, stem + g.stroke / 2, 0, ctx)
+    const cy = g.cap / 2
+    const ry = g.cap / 2
+    const rx = (right - stem)
+    strokeV(p, stem, 0, g.cap, g.stroke)
+    arc(p, stem, cy, rx, ry + g.overshoot * 0.4, g.stroke, 'right')
+    rect(p, x0, g.cap - hStroke(g), rx, hStroke(g))
+    rect(p, x0, 0, rx, hStroke(g))
+    topSerif(p, stem, g.cap, ctx)
+    bottomSerif(p, stem, 0, ctx)
   },
   E: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('E', ctx)
     const x0 = g.sidebearing
     const stem = x0 + g.stroke / 2
+    const hs = hStroke(g)
     strokeV(p, stem, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.cap / 2, w * 0.85, g.stroke * 0.85)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    rect(p, x0, g.cap - hs, w, hs)
+    rect(p, x0, g.cap / 2 - hs * 0.45, w * 0.82, hs * 0.9)
+    rect(p, x0, 0, w, hs)
     topSerif(p, stem, g.cap, ctx)
     bottomSerif(p, stem, 0, ctx)
   },
@@ -200,9 +281,10 @@ const uppers: Record<string, GlyphDraw> = {
     const w = baseWidth('F', ctx)
     const x0 = g.sidebearing
     const stem = x0 + g.stroke / 2
+    const hs = hStroke(g)
     strokeV(p, stem, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.cap / 2, w * 0.8, g.stroke * 0.85)
+    rect(p, x0, g.cap - hs, w, hs)
+    rect(p, x0, g.cap / 2 - hs * 0.45, w * 0.78, hs * 0.9)
     topSerif(p, stem, g.cap, ctx)
     bottomSerif(p, stem, 0, ctx)
   },
@@ -214,21 +296,29 @@ const uppers: Record<string, GlyphDraw> = {
     const cy = g.cap / 2
     const rx = w / 2
     const ry = g.cap / 2
-    ellipse(p, cx, cy, rx, ry)
-    ellipse(p, cx, cy, rx - g.stroke, ry - g.stroke, { hole: true })
-    // open right
-    rect(p, cx + rx * 0.4, cy - ry * 0.35, rx, ry * 0.4)
-    // crossbar
-    strokeH(p, cx + rx * 0.15, cy * 0.7, rx * 0.55, g.stroke)
-    strokeV(p, x0 + w - g.stroke / 2, 0, cy * 0.75, g.stroke)
+    const hs = hStroke(g)
+    ellipse(p, cx, cy, rx, ry + g.overshoot * 0.6)
+    ellipse(p, cx, cy, rx - g.stroke, ry + g.overshoot * 0.6 - hs, { hole: true })
+    // Open right
+    polygon(p, [
+      { x: cx + rx * 0.05, y: cy - ry * 0.42 },
+      { x: cx + rx + g.stroke, y: cy - ry * 0.42 },
+      { x: cx + rx + g.stroke, y: cy * 0.4 },
+      { x: cx + rx * 0.05, y: cy * 0.4 },
+    ])
+    // Inner shelf (the spur that defines G)
+    rect(p, cx + rx * 0.18, cy * 0.5 - hs * 0.45, rx * 0.65, hs * 0.9)
+    strokeV(p, x0 + w - g.stroke / 2, 0, cy * 0.5, g.stroke)
+    bottomSerif(p, x0 + w - g.stroke / 2, 0, ctx)
   },
   H: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('H', ctx)
     const x0 = g.sidebearing
+    const hs = hStroke(g)
     strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
     strokeV(p, x0 + w - g.stroke / 2, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.cap / 2, w, g.stroke * 0.9)
+    rect(p, x0, g.cap / 2 - hs / 2, w, hs)
     topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
     topSerif(p, x0 + w - g.stroke / 2, g.cap, ctx)
     bottomSerif(p, x0 + g.stroke / 2, 0, ctx)
@@ -249,10 +339,11 @@ const uppers: Record<string, GlyphDraw> = {
     const w = baseWidth('J', ctx)
     const x0 = g.sidebearing
     const stem = x0 + w - g.stroke / 2
-    strokeV(p, stem, g.cap * 0.2, g.cap * 0.8, g.stroke)
-    // hook
-    arc(p, stem - w * 0.4, g.cap * 0.2, w * 0.4, g.cap * 0.2, g.stroke, 'bottom')
-    strokeH(p, x0, g.cap * 0.2 - g.stroke / 2, w * 0.55, g.stroke)
+    const hookCy = g.cap * 0.18
+    const hookRx = w * 0.42
+    strokeV(p, stem, hookCy, g.cap - hookCy, g.stroke)
+    arc(p, stem - hookRx, hookCy, hookRx, hookCy + g.overshoot * 0.4, g.stroke, 'bottom')
+    strokeH(p, x0 + g.stroke * 0.4, hookCy - hStroke(g) / 2, hookRx + g.stroke * 0.2, hStroke(g))
     topSerif(p, stem, g.cap, ctx)
   },
   K: (p, ctx) => {
@@ -261,17 +352,19 @@ const uppers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
     const j = g.cap * 0.45
-    strokeLine(p, x0 + g.stroke, j, x0 + w, g.cap, g.stroke)
-    strokeLine(p, x0 + g.stroke, j, x0 + w, 0, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.8, j, x0 + w, g.cap, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.8, j, x0 + w, 0, g.stroke)
     topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
     bottomSerif(p, x0 + g.stroke / 2, 0, ctx)
+    bottomSerif(p, x0 + w - g.stroke / 4, 0, ctx)
   },
   L: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('L', ctx)
     const x0 = g.sidebearing
+    const hs = hStroke(g)
     strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    rect(p, x0, 0, w, hs)
     topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
   },
   M: (p, ctx) => {
@@ -280,8 +373,8 @@ const uppers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
     strokeV(p, x0 + w - g.stroke / 2, 0, g.cap, g.stroke)
-    strokeLine(p, x0 + g.stroke, g.cap, x0 + w / 2, g.cap * 0.2, g.stroke)
-    strokeLine(p, x0 + w / 2, g.cap * 0.2, x0 + w - g.stroke, g.cap, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.5, g.cap, x0 + w / 2, g.cap * 0.18, g.stroke)
+    strokeLine(p, x0 + w / 2, g.cap * 0.18, x0 + w - g.stroke * 0.5, g.cap, g.stroke)
     bottomSerif(p, x0 + g.stroke / 2, 0, ctx)
     bottomSerif(p, x0 + w - g.stroke / 2, 0, ctx)
   },
@@ -291,7 +384,7 @@ const uppers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
     strokeV(p, x0 + w - g.stroke / 2, 0, g.cap, g.stroke)
-    strokeLine(p, x0 + g.stroke, g.cap, x0 + w - g.stroke, 0, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.5, g.cap, x0 + w - g.stroke * 0.5, 0, g.stroke)
     bottomSerif(p, x0 + g.stroke / 2, 0, ctx)
     topSerif(p, x0 + w - g.stroke / 2, g.cap, ctx)
   },
@@ -301,19 +394,21 @@ const uppers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const cy = g.cap / 2
-    ellipse(p, cx, cy, w / 2, g.cap / 2)
-    ellipse(p, cx, cy, w / 2 - g.stroke, g.cap / 2 - g.stroke, { hole: true })
+    const rx = w / 2
+    const ry = g.cap / 2 + g.overshoot * 0.6
+    bowl(p, cx, cy, rx, ry, g.stroke, hStroke(g), 0)
   },
   P: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('P', ctx)
     const x0 = g.sidebearing
     const stem = x0 + g.stroke / 2
+    const hs = hStroke(g)
     strokeV(p, stem, 0, g.cap, g.stroke)
     const midY = g.cap * 0.55
-    arc(p, stem, (g.cap + midY) / 2, w - g.stroke, (g.cap - midY) / 2, g.stroke, 'right')
-    strokeH(p, x0, g.cap - g.stroke / 2, w - g.stroke * 0.4, g.stroke)
-    strokeH(p, x0, midY, w - g.stroke * 0.6, g.stroke * 0.9)
+    arc(p, stem, (g.cap + midY) / 2, w - g.stroke * 0.3, (g.cap - midY) / 2 + g.overshoot * 0.3, g.stroke, 'right')
+    rect(p, x0, g.cap - hs, w - g.stroke * 0.4, hs)
+    rect(p, x0, midY - hs * 0.45, w - g.stroke * 0.5, hs * 0.9)
     topSerif(p, stem, g.cap, ctx)
     bottomSerif(p, stem, 0, ctx)
   },
@@ -323,46 +418,47 @@ const uppers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const cy = g.cap / 2
-    ellipse(p, cx, cy, w / 2, g.cap / 2)
-    ellipse(p, cx, cy, w / 2 - g.stroke, g.cap / 2 - g.stroke, { hole: true })
-    strokeLine(p, cx + w * 0.1, g.cap * 0.2, cx + w * 0.42, -g.cap * 0.05, g.stroke)
+    const rx = w / 2
+    const ry = g.cap / 2 + g.overshoot * 0.6
+    bowl(p, cx, cy, rx, ry, g.stroke, hStroke(g), 0)
+    strokeLine(p, cx + w * 0.08, g.cap * 0.22, cx + w * 0.45, -g.cap * 0.06, g.stroke)
   },
   R: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('R', ctx)
     const x0 = g.sidebearing
     const stem = x0 + g.stroke / 2
+    const hs = hStroke(g)
     strokeV(p, stem, 0, g.cap, g.stroke)
     const midY = g.cap * 0.55
-    arc(p, stem, (g.cap + midY) / 2, w - g.stroke, (g.cap - midY) / 2, g.stroke, 'right')
-    strokeH(p, x0, g.cap - g.stroke / 2, w - g.stroke * 0.4, g.stroke)
-    strokeH(p, x0, midY, w - g.stroke * 0.6, g.stroke * 0.9)
-    // leg
-    strokeLine(p, stem + w * 0.45, midY, x0 + w, 0, g.stroke)
+    arc(p, stem, (g.cap + midY) / 2, w - g.stroke * 0.3, (g.cap - midY) / 2 + g.overshoot * 0.3, g.stroke, 'right')
+    rect(p, x0, g.cap - hs, w - g.stroke * 0.4, hs)
+    rect(p, x0, midY - hs * 0.45, w - g.stroke * 0.5, hs * 0.9)
+    strokeLine(p, stem + w * 0.4, midY, x0 + w, 0, g.stroke)
     topSerif(p, stem, g.cap, ctx)
     bottomSerif(p, stem, 0, ctx)
-    bottomSerif(p, x0 + w - g.stroke / 2, 0, ctx)
+    bottomSerif(p, x0 + w - g.stroke / 4, 0, ctx)
   },
   S: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('S', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    const ry = g.cap * 0.27
-    // top semicircle
-    arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'top')
-    arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'left')
-    // bottom semicircle
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'bottom')
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'right')
-    // middle bar
-    strokeH(p, x0 + g.stroke * 0.3, g.cap / 2, w - g.stroke * 0.6, g.stroke * 0.9)
+    const ryT = g.cap * 0.27
+    const ryB = g.cap * 0.27
+    const hs = hStroke(g)
+    arc(p, cx, g.cap - ryT, w / 2, ryT + g.overshoot * 0.3, g.stroke, 'top')
+    arc(p, cx, g.cap - ryT, w / 2, ryT, g.stroke, 'left')
+    arc(p, cx, ryB, w / 2, ryB + g.overshoot * 0.3, g.stroke, 'bottom')
+    arc(p, cx, ryB, w / 2, ryB, g.stroke, 'right')
+    rect(p, x0 + g.stroke * 0.3, g.cap / 2 - hs * 0.45, w - g.stroke * 0.6, hs * 0.9)
   },
   T: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('T', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
+    const hs = hStroke(g)
+    rect(p, x0, g.cap - hs, w, hs)
     strokeV(p, x0 + w / 2, 0, g.cap, g.stroke)
     bottomSerif(p, x0 + w / 2, 0, ctx)
   },
@@ -371,10 +467,10 @@ const uppers: Record<string, GlyphDraw> = {
     const w = baseWidth('U', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    const ry = g.cap * 0.25
+    const ry = g.cap * 0.28
     strokeV(p, x0 + g.stroke / 2, ry, g.cap - ry, g.stroke)
     strokeV(p, x0 + w - g.stroke / 2, ry, g.cap - ry, g.stroke)
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'bottom')
+    arc(p, cx, ry, w / 2, ry + g.overshoot * 0.4, g.stroke, 'bottom')
     topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
     topSerif(p, x0 + w - g.stroke / 2, g.cap, ctx)
   },
@@ -382,37 +478,39 @@ const uppers: Record<string, GlyphDraw> = {
     const g = geom(ctx)
     const w = baseWidth('V', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, g.cap, x0 + w / 2, 0, g.stroke)
-    strokeLine(p, x0 + w / 2, 0, x0 + w, g.cap, g.stroke)
-    topSerif(p, x0, g.cap, ctx)
-    topSerif(p, x0 + w, g.cap, ctx)
+    strokeLine(p, x0 + g.stroke * 0.3, g.cap, x0 + w / 2, 0, g.stroke)
+    strokeLine(p, x0 + w / 2, 0, x0 + w - g.stroke * 0.3, g.cap, g.stroke)
+    topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
+    topSerif(p, x0 + w - g.stroke / 2, g.cap, ctx)
   },
   W: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('W', ctx)
     const x0 = g.sidebearing
     const a = w / 4
-    strokeLine(p, x0, g.cap, x0 + a, 0, g.stroke)
-    strokeLine(p, x0 + a, 0, x0 + a * 2, g.cap * 0.7, g.stroke)
-    strokeLine(p, x0 + a * 2, g.cap * 0.7, x0 + a * 3, 0, g.stroke)
-    strokeLine(p, x0 + a * 3, 0, x0 + w, g.cap, g.stroke)
-    topSerif(p, x0, g.cap, ctx)
-    topSerif(p, x0 + w, g.cap, ctx)
+    strokeLine(p, x0 + g.stroke * 0.2, g.cap, x0 + a, 0, g.stroke)
+    strokeLine(p, x0 + a, 0, x0 + a * 2, g.cap * 0.72, g.stroke)
+    strokeLine(p, x0 + a * 2, g.cap * 0.72, x0 + a * 3, 0, g.stroke)
+    strokeLine(p, x0 + a * 3, 0, x0 + w - g.stroke * 0.2, g.cap, g.stroke)
+    topSerif(p, x0 + g.stroke / 2, g.cap, ctx)
+    topSerif(p, x0 + w - g.stroke / 2, g.cap, ctx)
   },
   X: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('X', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, 0, x0 + w, g.cap, g.stroke)
-    strokeLine(p, x0, g.cap, x0 + w, 0, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.3, 0, x0 + w - g.stroke * 0.3, g.cap, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.3, g.cap, x0 + w - g.stroke * 0.3, 0, g.stroke)
+    bottomSerif(p, x0 + g.stroke * 0.3, 0, ctx)
+    bottomSerif(p, x0 + w - g.stroke * 0.3, 0, ctx)
   },
   Y: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('Y', ctx)
     const x0 = g.sidebearing
     const midY = g.cap * 0.45
-    strokeLine(p, x0, g.cap, x0 + w / 2, midY, g.stroke)
-    strokeLine(p, x0 + w / 2, midY, x0 + w, g.cap, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.3, g.cap, x0 + w / 2, midY, g.stroke)
+    strokeLine(p, x0 + w / 2, midY, x0 + w - g.stroke * 0.3, g.cap, g.stroke)
     strokeV(p, x0 + w / 2, 0, midY, g.stroke)
     bottomSerif(p, x0 + w / 2, 0, ctx)
   },
@@ -420,25 +518,37 @@ const uppers: Record<string, GlyphDraw> = {
     const g = geom(ctx)
     const w = baseWidth('Z', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
-    strokeLine(p, x0 + w, g.cap - g.stroke, x0, g.stroke, g.stroke)
+    const hs = hStroke(g)
+    rect(p, x0, g.cap - hs, w, hs)
+    rect(p, x0, 0, w, hs)
+    strokeLine(p, x0 + w - g.stroke * 0.2, g.cap - hs, x0 + g.stroke * 0.2, hs, g.stroke)
   },
 }
 
 // ---------------------------------------------------------------------------
-// Lowercase letters (single-storey defaults — placeholder shapes)
+// Lowercase letters — humanist construction
 // ---------------------------------------------------------------------------
 
 const lowers: Record<string, GlyphDraw> = {
+  // Two-storey 'a' — closed bowl + stem with a tail
   a: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('a', ctx)
     const x0 = g.sidebearing
-    const cx = x0 + w / 2
-    ellipse(p, cx, g.xh / 2, w / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    const cx = x0 + (w - g.stroke / 2) / 2
+    const rx = (w - g.stroke / 2) / 2
+    const ry = g.xh / 2
+    const hs = hStroke(g)
+    bowl(p, cx, ry, rx, ry + g.overshoot * 0.5, g.stroke, hs, 0)
+    // Right stem flush with the bowl's right edge
     strokeV(p, x0 + w - g.stroke / 2, 0, g.xh, g.stroke)
+    // Subtle tail curling up from the bottom of the stem
+    const tailW = g.stroke * 1.2
+    polygon(p, [
+      { x: x0 + w, y: 0 },
+      { x: x0 + w + tailW, y: g.stroke * 0.6 },
+      { x: x0 + w + tailW, y: 0 },
+    ])
   },
   b: (p, ctx) => {
     const g = geom(ctx)
@@ -446,17 +556,23 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.ascender, g.stroke)
     const cx = x0 + g.stroke / 2 + (w - g.stroke) / 2
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    bowl(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   c: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('c', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    ellipse(p, cx, g.xh / 2, w / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
-    rect(p, cx + w * 0.2, g.xh / 2 - g.xh * 0.3, w / 2, g.xh * 0.6)
+    const ry = g.xh / 2 + g.overshoot * 0.5
+    const hs = hStroke(g)
+    ellipse(p, cx, g.xh / 2, w / 2, ry)
+    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, ry - hs, { hole: true })
+    polygon(p, [
+      { x: cx + g.stroke * 0.05, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 + g.xh * 0.32 },
+      { x: cx + g.stroke * 0.05, y: g.xh / 2 + g.xh * 0.32 },
+    ])
   },
   d: (p, ctx) => {
     const g = geom(ctx)
@@ -464,69 +580,80 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + w - g.stroke / 2, 0, g.ascender, g.stroke)
     const cx = x0 + (w - g.stroke / 2) / 2
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    bowl(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   e: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('e', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    ellipse(p, cx, g.xh / 2, w / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
-    strokeH(p, x0 + g.stroke * 0.4, g.xh / 2, w - g.stroke * 0.8, g.stroke * 0.85)
-    rect(p, cx + w * 0.1, g.xh / 2 - g.xh * 0.35, w / 2, g.xh * 0.25)
+    const ry = g.xh / 2 + g.overshoot * 0.5
+    const hs = hStroke(g)
+    ellipse(p, cx, g.xh / 2, w / 2, ry)
+    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, ry - hs, { hole: true })
+    rect(p, x0 + g.stroke * 0.4, g.xh / 2 - hs * 0.45, w - g.stroke * 0.8, hs * 0.9)
+    polygon(p, [
+      { x: cx + g.stroke * 0.1, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 - g.stroke * 0.4 },
+      { x: cx + g.stroke * 0.1, y: g.xh / 2 - g.stroke * 0.4 },
+    ])
   },
   f: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('f', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w / 2, 0, g.ascender, g.stroke)
-    arc(p, x0 + w / 2 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4, g.stroke, 'top')
-    arc(p, x0 + w / 2 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4, g.stroke, 'right')
-    strokeH(p, x0, g.xh, w, g.stroke * 0.85)
+    strokeV(p, x0 + w * 0.4, 0, g.ascender - w * 0.3, g.stroke)
+    arc(p, x0 + w * 0.4 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4 + g.overshoot * 0.3, g.stroke, 'top')
+    arc(p, x0 + w * 0.4 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4, g.stroke, 'right')
+    rect(p, x0, g.xh - hStroke(g) / 2, w * 0.85, hStroke(g))
   },
   g: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('g', ctx)
     const x0 = g.sidebearing
-    const cx = x0 + w / 2
-    ellipse(p, cx, g.xh / 2, w / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
-    strokeV(p, x0 + w - g.stroke / 2, g.descender + g.stroke, g.xh - g.descender - g.stroke, g.stroke)
-    strokeH(p, x0 + g.stroke, g.descender + g.stroke / 2, w - g.stroke * 1.2, g.stroke)
+    const cx = x0 + (w - g.stroke / 2) / 2
+    const rx = (w - g.stroke / 2) / 2
+    const ry = g.xh / 2
+    bowl(p, cx, ry, rx, ry + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
+    // Right stem extending into descender
+    strokeV(p, x0 + w - g.stroke / 2, g.descender + g.stroke * 0.5, g.xh - g.descender - g.stroke * 0.5, g.stroke)
+    // Hook at the bottom
+    arc(p, x0 + w / 2, g.descender + g.stroke * 0.5, w / 2 - g.stroke * 0.2, g.stroke * 0.5, g.stroke, 'bottom')
+    rect(p, x0 + g.stroke * 0.4, g.descender, w / 2, hStroke(g))
   },
   h: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('h', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.ascender, g.stroke)
-    arc(p, x0 + w / 2, g.xh - (g.xh / 3), (w - g.stroke) / 2, g.xh / 3, g.stroke, 'top')
-    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3, g.stroke)
+    const shRy = g.xh / 3 + g.overshoot * 0.3
+    arc(p, x0 + w / 2, g.xh - g.xh / 3, (w - g.stroke) / 2, shRy, g.stroke, 'top')
+    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3 + g.stroke * 0.2, g.stroke)
   },
   i: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('i', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + w / 2, 0, g.xh, g.stroke)
-    rect(p, x0 + w / 2 - g.stroke / 2, g.xh + g.stroke, g.stroke, g.stroke)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, g.xh + g.stroke * 0.6, g.stroke * 1.1, g.stroke * 1.1)
   },
   j: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('j', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w * 0.6, g.descender + w * 0.25, g.xh - g.descender - w * 0.25, g.stroke)
-    arc(p, x0 + w * 0.25, g.descender + w * 0.25, w * 0.35, w * 0.25, g.stroke, 'bottom')
-    rect(p, x0 + w * 0.6 - g.stroke / 2, g.xh + g.stroke, g.stroke, g.stroke)
+    strokeV(p, x0 + w * 0.65, g.descender + w * 0.3, g.xh - g.descender - w * 0.3, g.stroke)
+    arc(p, x0 + w * 0.3, g.descender + w * 0.3, w * 0.35, w * 0.3, g.stroke, 'bottom')
+    rect(p, x0 + w * 0.65 - g.stroke * 0.55, g.xh + g.stroke * 0.6, g.stroke * 1.1, g.stroke * 1.1)
   },
   k: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('k', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.ascender, g.stroke)
-    const j = g.xh * 0.45
-    strokeLine(p, x0 + g.stroke, j, x0 + w, g.xh, g.stroke)
-    strokeLine(p, x0 + g.stroke, j, x0 + w, 0, g.stroke)
+    const j = g.xh * 0.4
+    strokeLine(p, x0 + g.stroke * 0.8, j, x0 + w, g.xh, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.8, j, x0 + w, 0, g.stroke)
   },
   l: (p, ctx) => {
     const g = geom(ctx)
@@ -540,26 +667,25 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const a = w / 2
     strokeV(p, x0 + g.stroke / 2, 0, g.xh, g.stroke)
-    arc(p, x0 + a / 2 + g.stroke / 2, g.xh - g.xh / 3, (a - g.stroke) / 2, g.xh / 3, g.stroke, 'top')
-    strokeV(p, x0 + a, 0, g.xh - g.xh / 3, g.stroke)
-    arc(p, x0 + a + a / 2, g.xh - g.xh / 3, (a - g.stroke) / 2, g.xh / 3, g.stroke, 'top')
-    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3, g.stroke)
+    arc(p, x0 + a / 2 + g.stroke / 2, g.xh - g.xh / 3, (a - g.stroke) / 2, g.xh / 3 + g.overshoot * 0.3, g.stroke, 'top')
+    strokeV(p, x0 + a, 0, g.xh - g.xh / 3 + g.stroke * 0.2, g.stroke)
+    arc(p, x0 + a + a / 2, g.xh - g.xh / 3, (a - g.stroke) / 2, g.xh / 3 + g.overshoot * 0.3, g.stroke, 'top')
+    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3 + g.stroke * 0.2, g.stroke)
   },
   n: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('n', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.xh, g.stroke)
-    arc(p, x0 + w / 2, g.xh - (g.xh / 3), (w - g.stroke) / 2, g.xh / 3, g.stroke, 'top')
-    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3, g.stroke)
+    arc(p, x0 + w / 2, g.xh - (g.xh / 3), (w - g.stroke) / 2, g.xh / 3 + g.overshoot * 0.3, g.stroke, 'top')
+    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh - g.xh / 3 + g.stroke * 0.2, g.stroke)
   },
   o: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('o', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    ellipse(p, cx, g.xh / 2, w / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    bowl(p, cx, g.xh / 2, w / 2, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   p: (p, ctx) => {
     const g = geom(ctx)
@@ -567,8 +693,7 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, g.descender, g.xh - g.descender, g.stroke)
     const cx = x0 + g.stroke / 2 + (w - g.stroke) / 2
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    bowl(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   q: (p, ctx) => {
     const g = geom(ctx)
@@ -576,16 +701,15 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     strokeV(p, x0 + w - g.stroke / 2, g.descender, g.xh - g.descender, g.stroke)
     const cx = x0 + (w - g.stroke / 2) / 2
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2)
-    ellipse(p, cx, g.xh / 2, (w - g.stroke / 2) / 2 - g.stroke, g.xh / 2 - g.stroke, { hole: true })
+    bowl(p, cx, g.xh / 2, (w - g.stroke / 2) / 2, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   r: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('r', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + g.stroke / 2, 0, g.xh, g.stroke)
-    arc(p, x0 + w * 0.6, g.xh - g.xh / 3.5, w * 0.35, g.xh / 3.5, g.stroke, 'top')
-    arc(p, x0 + w * 0.6, g.xh - g.xh / 3.5, w * 0.35, g.xh / 3.5, g.stroke, 'right')
+    arc(p, x0 + w * 0.55, g.xh - g.xh / 3.5, w * 0.45, g.xh / 3.5 + g.overshoot * 0.2, g.stroke, 'top')
+    arc(p, x0 + w * 0.55, g.xh - g.xh / 3.5, w * 0.45, g.xh / 3.5, g.stroke, 'right')
   },
   s: (p, ctx) => {
     const g = geom(ctx)
@@ -593,18 +717,21 @@ const lowers: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const ry = g.xh * 0.27
-    arc(p, cx, g.xh - ry, w / 2, ry, g.stroke, 'top')
+    const hs = hStroke(g)
+    arc(p, cx, g.xh - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, cx, g.xh - ry, w / 2, ry, g.stroke, 'left')
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'bottom')
+    arc(p, cx, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'bottom')
     arc(p, cx, ry, w / 2, ry, g.stroke, 'right')
-    strokeH(p, x0 + g.stroke * 0.3, g.xh / 2, w - g.stroke * 0.6, g.stroke * 0.85)
+    rect(p, x0 + g.stroke * 0.3, g.xh / 2 - hs * 0.45, w - g.stroke * 0.6, hs * 0.9)
   },
   t: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('t', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w * 0.4, 0, g.cap * 0.9, g.stroke)
-    strokeH(p, x0, g.xh, w, g.stroke * 0.85)
+    strokeV(p, x0 + w * 0.4, 0, g.cap * 0.85, g.stroke)
+    rect(p, x0, g.xh - hStroke(g) / 2, w, hStroke(g))
+    // Subtle hook at the base
+    arc(p, x0 + w * 0.7, g.stroke * 0.5, w * 0.3, g.stroke * 0.5, g.stroke, 'bottom')
   },
   u: (p, ctx) => {
     const g = geom(ctx)
@@ -613,46 +740,47 @@ const lowers: Record<string, GlyphDraw> = {
     const ry = g.xh * 0.3
     strokeV(p, x0 + g.stroke / 2, ry, g.xh - ry, g.stroke)
     strokeV(p, x0 + w - g.stroke / 2, 0, g.xh, g.stroke)
-    arc(p, x0 + w / 2, ry, w / 2, ry, g.stroke, 'bottom')
+    arc(p, x0 + w / 2, ry, w / 2, ry + g.overshoot * 0.4, g.stroke, 'bottom')
   },
   v: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('v', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, g.xh, x0 + w / 2, 0, g.stroke)
-    strokeLine(p, x0 + w / 2, 0, x0 + w, g.xh, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.2, g.xh, x0 + w / 2, 0, g.stroke)
+    strokeLine(p, x0 + w / 2, 0, x0 + w - g.stroke * 0.2, g.xh, g.stroke)
   },
   w: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('w', ctx)
     const x0 = g.sidebearing
     const a = w / 4
-    strokeLine(p, x0, g.xh, x0 + a, 0, g.stroke)
-    strokeLine(p, x0 + a, 0, x0 + a * 2, g.xh * 0.7, g.stroke)
-    strokeLine(p, x0 + a * 2, g.xh * 0.7, x0 + a * 3, 0, g.stroke)
-    strokeLine(p, x0 + a * 3, 0, x0 + w, g.xh, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.2, g.xh, x0 + a, 0, g.stroke)
+    strokeLine(p, x0 + a, 0, x0 + a * 2, g.xh * 0.72, g.stroke)
+    strokeLine(p, x0 + a * 2, g.xh * 0.72, x0 + a * 3, 0, g.stroke)
+    strokeLine(p, x0 + a * 3, 0, x0 + w - g.stroke * 0.2, g.xh, g.stroke)
   },
   x: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('x', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, 0, x0 + w, g.xh, g.stroke)
-    strokeLine(p, x0, g.xh, x0 + w, 0, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.2, 0, x0 + w - g.stroke * 0.2, g.xh, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.2, g.xh, x0 + w - g.stroke * 0.2, 0, g.stroke)
   },
   y: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('y', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, g.xh, x0 + w * 0.55, 0, g.stroke)
-    strokeLine(p, x0 + w, g.xh, x0 + w * 0.2, g.descender, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.2, g.xh, x0 + w * 0.55, 0, g.stroke)
+    strokeLine(p, x0 + w - g.stroke * 0.2, g.xh, x0 + w * 0.18, g.descender, g.stroke)
   },
   z: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('z', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.xh - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
-    strokeLine(p, x0 + w, g.xh - g.stroke, x0, g.stroke, g.stroke)
+    const hs = hStroke(g)
+    rect(p, x0, g.xh - hs, w, hs)
+    rect(p, x0, 0, w, hs)
+    strokeLine(p, x0 + w - g.stroke * 0.2, g.xh - hs, x0 + g.stroke * 0.2, hs, g.stroke)
   },
 }
 
@@ -666,57 +794,60 @@ const digits: Record<string, GlyphDraw> = {
     const w = baseWidth('zero', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w / 2
-    ellipse(p, cx, g.cap / 2, w / 2, g.cap / 2)
-    ellipse(p, cx, g.cap / 2, w / 2 - g.stroke, g.cap / 2 - g.stroke, { hole: true })
-    strokeLine(p, cx + w * 0.18, g.cap * 0.8, cx - w * 0.18, g.cap * 0.2, g.stroke * 0.5)
+    bowl(p, cx, g.cap / 2, w / 2, g.cap / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
   },
   one: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('one', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w / 2, 0, g.cap, g.stroke)
-    strokeLine(p, x0, g.cap * 0.8, x0 + w / 2, g.cap, g.stroke * 0.85)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    const hs = hStroke(g)
+    strokeV(p, x0 + w * 0.55, 0, g.cap, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.4, g.cap * 0.78, x0 + w * 0.55, g.cap, g.stroke * 0.85)
+    rect(p, x0, 0, w, hs)
   },
   two: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('two', ctx)
     const x0 = g.sidebearing
     const ry = g.cap * 0.3
-    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'top')
+    const hs = hStroke(g)
+    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'right')
-    strokeLine(p, x0 + w, g.cap * 0.6, x0, g.stroke, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    strokeLine(p, x0 + w - g.stroke * 0.3, g.cap * 0.6, x0 + g.stroke * 0.3, hs, g.stroke)
+    rect(p, x0, 0, w, hs)
   },
   three: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('three', ctx)
     const x0 = g.sidebearing
-    const ry = g.cap * 0.25
-    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'top')
+    const ry = g.cap * 0.27
+    const hs = hStroke(g)
+    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'right')
-    arc(p, x0 + w / 2, ry, w / 2, ry, g.stroke, 'bottom')
+    arc(p, x0 + w / 2, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'bottom')
     arc(p, x0 + w / 2, ry, w / 2, ry, g.stroke, 'right')
-    strokeH(p, x0 + w * 0.2, g.cap / 2, w * 0.6, g.stroke * 0.85)
+    rect(p, x0 + w * 0.18, g.cap / 2 - hs * 0.45, w * 0.6, hs * 0.9)
   },
   four: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('four', ctx)
     const x0 = g.sidebearing
+    const hs = hStroke(g)
     strokeV(p, x0 + w * 0.7, 0, g.cap, g.stroke)
-    strokeLine(p, x0 + w * 0.7, g.cap, x0, g.cap * 0.35, g.stroke)
-    strokeH(p, x0, g.cap * 0.35, w, g.stroke)
+    strokeLine(p, x0 + w * 0.7, g.cap, x0 + g.stroke * 0.3, g.cap * 0.32, g.stroke)
+    rect(p, x0, g.cap * 0.32 - hs / 2, w, hs)
   },
   five: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('five', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeV(p, x0 + g.stroke / 2, g.cap * 0.5, g.cap * 0.5, g.stroke)
     const ry = g.cap * 0.27
-    arc(p, x0 + w / 2, ry, w / 2, ry, g.stroke, 'bottom')
+    const hs = hStroke(g)
+    rect(p, x0, g.cap - hs, w, hs)
+    strokeV(p, x0 + g.stroke / 2, g.cap * 0.5, g.cap * 0.5, g.stroke)
+    arc(p, x0 + w / 2, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'bottom')
     arc(p, x0 + w / 2, ry, w / 2, ry, g.stroke, 'right')
-    strokeH(p, x0 + g.stroke / 2, g.cap * 0.5, w * 0.55, g.stroke)
+    rect(p, x0 + g.stroke * 0.5, g.cap * 0.5 - hs * 0.45, w * 0.55, hs * 0.9)
   },
   six: (p, ctx) => {
     const g = geom(ctx)
@@ -724,9 +855,8 @@ const digits: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const ry = g.cap * 0.27
-    ellipse(p, cx, ry, w / 2, ry)
-    ellipse(p, cx, ry, w / 2 - g.stroke, ry - g.stroke, { hole: true })
-    arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'top')
+    bowl(p, cx, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
+    arc(p, cx, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'left')
     strokeV(p, x0 + g.stroke / 2, ry, g.cap - ry * 2, g.stroke)
   },
@@ -734,8 +864,9 @@ const digits: Record<string, GlyphDraw> = {
     const g = geom(ctx)
     const w = baseWidth('seven', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeLine(p, x0 + w, g.cap, x0 + w * 0.25, 0, g.stroke)
+    const hs = hStroke(g)
+    rect(p, x0, g.cap - hs, w, hs)
+    strokeLine(p, x0 + w - g.stroke * 0.2, g.cap, x0 + w * 0.22, 0, g.stroke)
   },
   eight: (p, ctx) => {
     const g = geom(ctx)
@@ -744,10 +875,8 @@ const digits: Record<string, GlyphDraw> = {
     const cx = x0 + w / 2
     const ryT = g.cap * 0.23
     const ryB = g.cap * 0.27
-    ellipse(p, cx, g.cap - ryT, w / 2 * 0.85, ryT)
-    ellipse(p, cx, g.cap - ryT, w / 2 * 0.85 - g.stroke, ryT - g.stroke, { hole: true })
-    ellipse(p, cx, ryB, w / 2, ryB)
-    ellipse(p, cx, ryB, w / 2 - g.stroke, ryB - g.stroke, { hole: true })
+    bowl(p, cx, g.cap - ryT, w / 2 * 0.85, ryT + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
+    bowl(p, cx, ryB, w / 2, ryB + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
   },
   nine: (p, ctx) => {
     const g = geom(ctx)
@@ -755,122 +884,123 @@ const digits: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const ry = g.cap * 0.27
-    ellipse(p, cx, g.cap - ry, w / 2, ry)
-    ellipse(p, cx, g.cap - ry, w / 2 - g.stroke, ry - g.stroke, { hole: true })
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'bottom')
+    bowl(p, cx, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
+    arc(p, cx, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'bottom')
     arc(p, cx, ry, w / 2, ry, g.stroke, 'right')
     strokeV(p, x0 + w - g.stroke / 2, ry, g.cap - ry * 2, g.stroke)
   },
 }
 
 // ---------------------------------------------------------------------------
-// Punctuation
+// Punctuation (kept simple, but with overshoots/contrast where it matters)
 // ---------------------------------------------------------------------------
 
 const punct: Record<string, GlyphDraw> = {
-  space: () => {
-    // intentionally empty
-  },
+  space: () => {},
   exclam: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('exclam', ctx)
     const x0 = g.sidebearing
     strokeV(p, x0 + w / 2, g.cap * 0.25, g.cap * 0.75, g.stroke)
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
   },
   period: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('period', ctx)
     const x0 = g.sidebearing
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
   },
   comma: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('comma', ctx)
     const x0 = g.sidebearing
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
-    strokeLine(p, x0 + w / 2 - g.stroke / 4, 0, x0 + w * 0.2, -g.stroke * 1.4, g.stroke * 0.6)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
+    strokeLine(p, x0 + w / 2, 0, x0 + w * 0.2, -g.stroke * 1.6, g.stroke * 0.7)
   },
   colon: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('colon', ctx)
     const x0 = g.sidebearing
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
-    rect(p, x0 + w / 2 - g.stroke / 2, g.xh - g.stroke, g.stroke, g.stroke)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, g.xh - g.stroke * 1.1, g.stroke * 1.1, g.stroke * 1.1)
   },
   semicolon: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('semicolon', ctx)
     const x0 = g.sidebearing
-    rect(p, x0 + w / 2 - g.stroke / 2, g.xh - g.stroke, g.stroke, g.stroke)
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
-    strokeLine(p, x0 + w / 2 - g.stroke / 4, 0, x0 + w * 0.2, -g.stroke * 1.4, g.stroke * 0.6)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, g.xh - g.stroke * 1.1, g.stroke * 1.1, g.stroke * 1.1)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
+    strokeLine(p, x0 + w / 2, 0, x0 + w * 0.2, -g.stroke * 1.6, g.stroke * 0.7)
   },
   hyphen: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('hyphen', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.xh / 2, w, g.stroke)
+    rect(p, x0, g.xh / 2 - hStroke(g) / 2, w, hStroke(g))
   },
   underscore: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('underscore', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.descender / 2, w, g.stroke)
+    rect(p, x0, g.descender / 2 - hStroke(g) / 2, w, hStroke(g))
   },
   slash: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('slash', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, 0, x0 + w, g.cap, g.stroke)
+    strokeLine(p, x0, 0, x0 + w, g.cap, g.stroke * 0.85)
   },
   backslash: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('backslash', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, g.cap, x0 + w, 0, g.stroke)
+    strokeLine(p, x0, g.cap, x0 + w, 0, g.stroke * 0.85)
   },
   parenleft: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('parenleft', ctx)
     const x0 = g.sidebearing
-    arc(p, x0 + w + g.stroke / 2, g.cap / 2, w * 0.9, g.cap / 2, g.stroke, 'left')
+    arc(p, x0 + w + g.stroke / 2, g.cap / 2, w * 0.95, g.cap / 2 + g.overshoot * 0.5, g.stroke * 0.85, 'left')
   },
   parenright: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('parenright', ctx)
     const x0 = g.sidebearing
-    arc(p, x0 - g.stroke / 2, g.cap / 2, w * 0.9, g.cap / 2, g.stroke, 'right')
+    arc(p, x0 - g.stroke / 2, g.cap / 2, w * 0.95, g.cap / 2 + g.overshoot * 0.5, g.stroke * 0.85, 'right')
   },
   bracketleft: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('bracketleft', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    const hs = hStroke(g)
+    strokeV(p, x0 + g.stroke / 2, 0, g.cap, g.stroke * 0.85)
+    rect(p, x0, g.cap - hs, w, hs * 0.9)
+    rect(p, x0, 0, w, hs * 0.9)
   },
   bracketright: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('bracketright', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w - g.stroke / 2, 0, g.cap, g.stroke)
-    strokeH(p, x0, g.cap - g.stroke / 2, w, g.stroke)
-    strokeH(p, x0, g.stroke / 2, w, g.stroke)
+    const hs = hStroke(g)
+    strokeV(p, x0 + w - g.stroke / 2, 0, g.cap, g.stroke * 0.85)
+    rect(p, x0, g.cap - hs, w, hs * 0.9)
+    rect(p, x0, 0, w, hs * 0.9)
   },
   braceleft: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('braceleft', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w / 2, 0, g.cap, g.stroke * 0.8)
-    strokeH(p, x0, g.cap / 2, w * 0.7, g.stroke * 0.7)
+    const hs = hStroke(g)
+    strokeV(p, x0 + w / 2, 0, g.cap, g.stroke * 0.7)
+    rect(p, x0, g.cap / 2 - hs * 0.4, w * 0.7, hs * 0.8)
   },
   braceright: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('braceright', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w / 2, 0, g.cap, g.stroke * 0.8)
-    strokeH(p, x0 + w * 0.3, g.cap / 2, w * 0.7, g.stroke * 0.7)
+    const hs = hStroke(g)
+    strokeV(p, x0 + w / 2, 0, g.cap, g.stroke * 0.7)
+    rect(p, x0 + w * 0.3, g.cap / 2 - hs * 0.4, w * 0.7, hs * 0.8)
   },
   quotesingle: (p, ctx) => {
     const g = geom(ctx)
@@ -889,10 +1019,11 @@ const punct: Record<string, GlyphDraw> = {
     const g = geom(ctx)
     const w = baseWidth('numbersign', ctx)
     const x0 = g.sidebearing
-    strokeV(p, x0 + w * 0.3, g.cap * 0.05, g.cap * 0.9, g.stroke * 0.85)
-    strokeV(p, x0 + w * 0.7, g.cap * 0.05, g.cap * 0.9, g.stroke * 0.85)
-    strokeH(p, x0, g.cap * 0.65, w, g.stroke * 0.85)
-    strokeH(p, x0, g.cap * 0.35, w, g.stroke * 0.85)
+    const hs = hStroke(g)
+    strokeLine(p, x0 + w * 0.32, 0, x0 + w * 0.22, g.cap, g.stroke * 0.85)
+    strokeLine(p, x0 + w * 0.78, 0, x0 + w * 0.68, g.cap, g.stroke * 0.85)
+    rect(p, x0, g.cap * 0.65 - hs / 2, w, hs * 0.9)
+    rect(p, x0, g.cap * 0.35 - hs / 2, w, hs * 0.9)
   },
   dollar: (p, ctx) => {
     const g = geom(ctx)
@@ -900,11 +1031,12 @@ const punct: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const ry = g.cap * 0.27
-    arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'top')
+    const hs = hStroke(g)
+    arc(p, cx, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, cx, g.cap - ry, w / 2, ry, g.stroke, 'left')
-    arc(p, cx, ry, w / 2, ry, g.stroke, 'bottom')
+    arc(p, cx, ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'bottom')
     arc(p, cx, ry, w / 2, ry, g.stroke, 'right')
-    strokeH(p, x0 + g.stroke * 0.3, g.cap / 2, w - g.stroke * 0.6, g.stroke * 0.85)
+    rect(p, x0 + g.stroke * 0.3, g.cap / 2 - hs * 0.45, w - g.stroke * 0.6, hs * 0.9)
     strokeV(p, cx, -g.stroke * 1.5, g.cap + g.stroke * 3, g.stroke * 0.6)
   },
   percent: (p, ctx) => {
@@ -912,10 +1044,8 @@ const punct: Record<string, GlyphDraw> = {
     const w = baseWidth('percent', ctx)
     const x0 = g.sidebearing
     const r = g.cap * 0.18
-    ellipse(p, x0 + r, g.cap - r, r, r)
-    ellipse(p, x0 + r, g.cap - r, r - g.stroke * 0.6, r - g.stroke * 0.6, { hole: true })
-    ellipse(p, x0 + w - r, r, r, r)
-    ellipse(p, x0 + w - r, r, r - g.stroke * 0.6, r - g.stroke * 0.6, { hole: true })
+    ring(p, x0 + r, g.cap - r, r, r, g.stroke * 0.65)
+    ring(p, x0 + w - r, r, r, r, g.stroke * 0.65)
     strokeLine(p, x0 + w, g.cap, x0, 0, g.stroke * 0.7)
   },
   ampersand: (p, ctx) => {
@@ -923,11 +1053,9 @@ const punct: Record<string, GlyphDraw> = {
     const w = baseWidth('ampersand', ctx)
     const x0 = g.sidebearing
     const cx = x0 + w * 0.4
-    ellipse(p, cx, g.cap * 0.78, w * 0.3, g.cap * 0.22)
-    ellipse(p, cx, g.cap * 0.78, w * 0.3 - g.stroke, g.cap * 0.22 - g.stroke, { hole: true })
-    ellipse(p, cx, g.cap * 0.3, w * 0.4, g.cap * 0.3)
-    ellipse(p, cx, g.cap * 0.3, w * 0.4 - g.stroke, g.cap * 0.3 - g.stroke, { hole: true })
-    strokeLine(p, cx + w * 0.1, g.cap * 0.6, x0 + w, 0, g.stroke)
+    bowl(p, cx, g.cap * 0.78, w * 0.3, g.cap * 0.22 + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
+    bowl(p, cx, g.cap * 0.3, w * 0.4, g.cap * 0.3 + g.overshoot * 0.3, g.stroke, hStroke(g), 0)
+    strokeLine(p, cx + w * 0.05, g.cap * 0.55, x0 + w, 0, g.stroke)
   },
   asterisk: (p, ctx) => {
     const g = geom(ctx)
@@ -935,25 +1063,26 @@ const punct: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const cy = g.cap * 0.7
-    const r = w / 2 * 0.8
-    for (let i = 0; i < 5; i++) {
-      const ang = (Math.PI * 2 * i) / 5 - Math.PI / 2
-      strokeLine(p, cx, cy, cx + Math.cos(ang) * r, cy + Math.sin(ang) * r, g.stroke * 0.7)
+    const r = w / 2 * 0.85
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI * i) / 3 - Math.PI / 2
+      strokeLine(p, cx, cy, cx + Math.cos(ang) * r, cy + Math.sin(ang) * r, g.stroke * 0.55)
     }
   },
   plus: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('plus', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap / 2, w, g.stroke * 0.85)
-    strokeV(p, x0 + w / 2, g.cap / 2 - w / 2, w, g.stroke * 0.85)
+    rect(p, x0, g.cap / 2 - hStroke(g) / 2, w, hStroke(g) * 0.95)
+    strokeV(p, x0 + w / 2, g.cap / 2 - w / 2, w, g.stroke * 0.95)
   },
   equal: (p, ctx) => {
     const g = geom(ctx)
     const w = baseWidth('equal', ctx)
     const x0 = g.sidebearing
-    strokeH(p, x0, g.cap / 2 + g.stroke, w, g.stroke * 0.85)
-    strokeH(p, x0, g.cap / 2 - g.stroke, w, g.stroke * 0.85)
+    const hs = hStroke(g)
+    rect(p, x0, g.cap / 2 + g.stroke - hs / 2, w, hs * 0.9)
+    rect(p, x0, g.cap / 2 - g.stroke - hs / 2, w, hs * 0.9)
   },
   less: (p, ctx) => {
     const g = geom(ctx)
@@ -974,10 +1103,10 @@ const punct: Record<string, GlyphDraw> = {
     const w = baseWidth('question', ctx)
     const x0 = g.sidebearing
     const ry = g.cap * 0.22
-    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'top')
+    arc(p, x0 + w / 2, g.cap - ry, w / 2, ry + g.overshoot * 0.3, g.stroke, 'top')
     arc(p, x0 + w / 2, g.cap - ry, w / 2, ry, g.stroke, 'right')
     strokeV(p, x0 + w / 2, g.cap * 0.3, g.cap * 0.25, g.stroke)
-    rect(p, x0 + w / 2 - g.stroke / 2, 0, g.stroke, g.stroke)
+    rect(p, x0 + w / 2 - g.stroke * 0.55, 0, g.stroke * 1.1, g.stroke * 1.1)
   },
   at: (p, ctx) => {
     const g = geom(ctx)
@@ -985,10 +1114,8 @@ const punct: Record<string, GlyphDraw> = {
     const x0 = g.sidebearing
     const cx = x0 + w / 2
     const cy = g.cap / 2
-    ellipse(p, cx, cy, w / 2, g.cap / 2)
-    ellipse(p, cx, cy, w / 2 - g.stroke * 0.7, g.cap / 2 - g.stroke * 0.7, { hole: true })
-    ellipse(p, cx, cy, w * 0.18, g.cap * 0.18)
-    ellipse(p, cx, cy, w * 0.18 - g.stroke * 0.6, g.cap * 0.18 - g.stroke * 0.6, { hole: true })
+    ring(p, cx, cy, w / 2, g.cap / 2, g.stroke * 0.7)
+    ring(p, cx, cy, w * 0.18, g.cap * 0.18, g.stroke * 0.6)
     strokeV(p, cx + w * 0.18, cy - g.cap * 0.1, g.cap * 0.3, g.stroke * 0.7)
   },
   asciicircum: (p, ctx) => {
@@ -1002,7 +1129,7 @@ const punct: Record<string, GlyphDraw> = {
     const g = geom(ctx)
     const w = baseWidth('grave', ctx)
     const x0 = g.sidebearing
-    strokeLine(p, x0, g.cap, x0 + w, g.cap * 0.8, g.stroke * 0.7)
+    strokeLine(p, x0, g.cap, x0 + w, g.cap * 0.78, g.stroke * 0.7)
   },
   bar: (p, ctx) => {
     const g = geom(ctx)
@@ -1023,6 +1150,76 @@ const punct: Record<string, GlyphDraw> = {
 }
 
 // ---------------------------------------------------------------------------
+// Italic letter overrides (true cursive structure for the most distinctive
+// glyphs; the rest of the alphabet is shear-only at write time).
+// ---------------------------------------------------------------------------
+
+export const ITALIC_OVERRIDES: Record<string, GlyphDraw> = {
+  // Single-storey italic 'a' — a hallmark of true italics
+  a: (p, ctx) => {
+    const g = geom(ctx)
+    const w = baseWidth('a', ctx)
+    const x0 = g.sidebearing
+    const cx = x0 + (w - g.stroke / 2) / 2
+    const rx = (w - g.stroke / 2) / 2
+    bowl(p, cx, g.xh / 2, rx, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
+    strokeV(p, x0 + w - g.stroke / 2, 0, g.xh, g.stroke)
+  },
+  // Italic 'e' — angled crossbar
+  e: (p, ctx) => {
+    const g = geom(ctx)
+    const w = baseWidth('e', ctx)
+    const x0 = g.sidebearing
+    const cx = x0 + w / 2
+    const ry = g.xh / 2 + g.overshoot * 0.5
+    const hs = hStroke(g)
+    ellipse(p, cx, g.xh / 2, w / 2, ry)
+    ellipse(p, cx, g.xh / 2, w / 2 - g.stroke, ry - hs, { hole: true })
+    // Tilted crossbar (slight upward tilt is characteristic)
+    strokeLine(p, x0 + g.stroke * 0.5, g.xh * 0.42, x0 + w - g.stroke * 0.5, g.xh * 0.55, hs)
+    polygon(p, [
+      { x: cx + g.stroke * 0.1, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 - g.xh * 0.32 },
+      { x: cx + w / 2 + g.stroke, y: g.xh / 2 - g.stroke * 0.4 },
+      { x: cx + g.stroke * 0.1, y: g.xh / 2 - g.stroke * 0.4 },
+    ])
+  },
+  // Italic 'f' — descending tail (ascender + descender)
+  f: (p, ctx) => {
+    const g = geom(ctx)
+    const w = baseWidth('f', ctx)
+    const x0 = g.sidebearing
+    strokeV(p, x0 + w * 0.5, g.descender, g.ascender - g.descender, g.stroke)
+    arc(p, x0 + w * 0.5 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4 + g.overshoot * 0.3, g.stroke, 'top')
+    arc(p, x0 + w * 0.5 + w * 0.4, g.ascender - w * 0.4, w * 0.4, w * 0.4, g.stroke, 'right')
+    rect(p, x0, g.xh - hStroke(g) / 2, w * 0.85, hStroke(g))
+  },
+  // Single-storey italic 'g' — open loop, more cursive
+  g: (p, ctx) => {
+    const g = geom(ctx)
+    const w = baseWidth('g', ctx)
+    const x0 = g.sidebearing
+    const cx = x0 + (w - g.stroke / 2) / 2
+    const rx = (w - g.stroke / 2) / 2
+    bowl(p, cx, g.xh / 2, rx, g.xh / 2 + g.overshoot * 0.5, g.stroke, hStroke(g), 0)
+    // Descender as a curved tail rather than a full loop
+    strokeV(p, x0 + w - g.stroke / 2, g.descender * 0.6, g.xh - g.descender * 0.6, g.stroke)
+    arc(p, x0 + w * 0.55, g.descender * 0.6, w * 0.4, g.stroke * 0.6, g.stroke, 'bottom')
+  },
+  // Italic 'k' — distinctive loop joint
+  k: (p, ctx) => {
+    const g = geom(ctx)
+    const w = baseWidth('k', ctx)
+    const x0 = g.sidebearing
+    strokeV(p, x0 + g.stroke / 2, 0, g.ascender, g.stroke)
+    const j = g.xh * 0.42
+    // Upper diagonal curls into a small loop at the join
+    strokeLine(p, x0 + g.stroke * 0.8, j, x0 + w * 0.95, g.xh, g.stroke)
+    strokeLine(p, x0 + g.stroke * 0.6, j - g.stroke * 0.2, x0 + w, 0, g.stroke)
+  },
+}
+
+// ---------------------------------------------------------------------------
 // Public registry
 // ---------------------------------------------------------------------------
 
@@ -1034,7 +1231,5 @@ export const DEFAULT_DRAWERS: Record<string, GlyphDraw> = {
 }
 
 // Suppress unused-import warnings for primitives only used by some drawers.
-void roundRect
 void slab
-void polygon
 void KAPPA

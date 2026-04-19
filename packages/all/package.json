@@ -1,6 +1,6 @@
 {
   "name": "@nps-fonts/all",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "NPS Fonts meta-package — installs all five families.",
   "license": "OFL-1.1",
   "homepage": "https://github.com/stacksjs/nps-fonts",
@@ -24,10 +24,10 @@
     "*.css"
   ],
   "dependencies": {
-    "@nps-fonts/wayfinder-sans": "0.0.1",
-    "@nps-fonts/wayfinder-serif": "0.0.1",
-    "@nps-fonts/campfire-script": "0.0.1",
-    "@nps-fonts/switchback": "0.0.1",
-    "@nps-fonts/cairn": "0.0.1"
+    "@nps-fonts/wayfinder-sans": "0.1.0",
+    "@nps-fonts/wayfinder-serif": "0.1.0",
+    "@nps-fonts/campfire-script": "0.1.0",
+    "@nps-fonts/switchback": "0.1.0",
+    "@nps-fonts/cairn": "0.1.0"
   }
 }
