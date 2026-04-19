@@ -48,14 +48,14 @@ jobs:
         run: bun run web
 
       - name: Upload built fonts as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fonts
           path: fonts/
           retention-days: 14
 
       - name: Upload specimen site as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-dist
           path: web/dist/
