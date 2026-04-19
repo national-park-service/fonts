@@ -1,0 +1,21 @@
+/* Cairn — @font-face declarations. */
+
+@font-face {
+  font-family: "Cairn";
+  src: url("./fonts/woff2/Cairn-Regular.woff2") format("woff2"),
+       url("./fonts/woff/Cairn-Regular.woff") format("woff"),
+       url("./fonts/otf/Cairn-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cairn";
+  src: url("./fonts/woff2/Cairn-Bold.woff2") format("woff2"),
+       url("./fonts/woff/Cairn-Bold.woff") format("woff"),
+       url("./fonts/otf/Cairn-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

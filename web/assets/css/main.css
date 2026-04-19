@@ -1,0 +1,265 @@
+/* ----------------------------------------------------------------------- */
+/* Reset + base                                                            */
+/* ----------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5efe2;          /* sun-bleached canvas */
+  --bg-alt: #ebe2cf;
+  --ink: #1f2a23;         /* deep forest */
+  --ink-soft: #4a5a4d;
+  --rust: #b04a2e;        /* park-sign rust */
+  --moss: #4f6b46;
+  --sky: #5b7a8f;
+  --rule: #cbbfa2;
+
+  --maxw: 1180px;
+  --pad: 24px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161812;
+    --bg-alt: #1d201a;
+    --ink: #ece6d4;
+    --ink-soft: #b9b7a7;
+    --rust: #d8693c;
+    --moss: #88a47a;
+    --sky: #82a3b8;
+    --rule: #2d3128;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Wayfinder Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--rust); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+main, header, footer { padding: 0 var(--pad); }
+.wrap { max-width: var(--maxw); margin: 0 auto; }
+
+/* ----------------------------------------------------------------------- */
+/* Header                                                                  */
+/* ----------------------------------------------------------------------- */
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  padding-top: 28px; padding-bottom: 20px;
+}
+.site-header .wrap {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 32px;
+}
+.brand {
+  font-family: "Cairn", "Wayfinder Sans", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nav { display: flex; gap: 24px; font-size: 15px; }
+.nav a { color: var(--ink-soft); }
+
+/* ----------------------------------------------------------------------- */
+/* Hero                                                                    */
+/* ----------------------------------------------------------------------- */
+.hero { padding-top: 60px; padding-bottom: 80px; border-bottom: 1px solid var(--rule); }
+.hero h1 {
+  font-family: "Cairn", sans-serif;
+  font-weight: 700;
+  font-size: clamp(56px, 9vw, 144px);
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  margin: 0 0 24px;
+  text-transform: uppercase;
+}
+.hero .lede {
+  font-family: "Wayfinder Serif", Georgia, serif;
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.45;
+  max-width: 880px;
+  color: var(--ink-soft);
+  margin: 0 0 36px;
+}
+.hero .signature {
+  font-family: "Campfire Script", cursive;
+  font-size: clamp(28px, 4vw, 56px);
+  color: var(--moss);
+  margin: 0;
+}
+.disclaimer {
+  margin-top: 40px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--rust);
+  padding: 6px 14px;
+  max-width: 760px;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Family card                                                             */
+/* ----------------------------------------------------------------------- */
+.families { padding-top: 80px; padding-bottom: 80px; }
+
+.family {
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+}
+.family:last-child { border-bottom: 1px solid var(--rule); }
+
+.family-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 24px;
+  margin-bottom: 28px; flex-wrap: wrap;
+}
+.family-name {
+  font-family: "Cairn", sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.family-meta { color: var(--ink-soft); font-size: 14px; }
+
+.family-display {
+  font-size: clamp(72px, 12vw, 200px);
+  line-height: 0.95;
+  margin: 12px 0 24px;
+  letter-spacing: -0.01em;
+}
+
+.family-waterfall {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-bottom: 28px;
+  border-left: 2px solid var(--rule);
+  padding-left: 20px;
+}
+.family-waterfall .row {
+  display: flex; align-items: baseline; gap: 24px;
+}
+.family-waterfall .label {
+  flex: 0 0 130px;
+  font-family: "Wayfinder Sans", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.family-waterfall .specimen {
+  font-size: clamp(24px, 3.5vw, 44px);
+  line-height: 1.2;
+}
+
+.family-actions {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-top: 24px;
+}
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  font-family: "Wayfinder Sans", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+.btn:hover { background: var(--ink); color: var(--bg); text-decoration: none; }
+.btn.primary { background: var(--rust); color: white; border-color: var(--rust); }
+.btn.primary:hover { background: var(--ink); border-color: var(--ink); }
+
+.snippet {
+  font-family: "SF Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+  font-size: 13px;
+  background: var(--bg-alt);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 10px 14px;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Type tester                                                             */
+/* ----------------------------------------------------------------------- */
+.tester { padding: 80px 0; border-top: 1px solid var(--rule); }
+.tester h2 {
+  font-family: "Cairn", sans-serif;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 24px;
+}
+.tester-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.tester-controls label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.tester-controls input, .tester-controls select {
+  font: inherit;
+  padding: 6px 8px;
+  background: var(--bg-alt);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink);
+}
+.tester-area {
+  width: 100%;
+  min-height: 220px;
+  padding: 20px;
+  background: var(--bg-alt);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 56px;
+  line-height: 1.15;
+  resize: vertical;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Glyph table                                                             */
+/* ----------------------------------------------------------------------- */
+.glyphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 4px;
+  margin-top: 16px;
+}
+.glyphs .cell {
+  aspect-ratio: 1;
+  display: grid; place-items: center;
+  background: var(--bg-alt);
+  border: 1px solid var(--rule);
+  font-size: 28px;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Footer                                                                  */
+/* ----------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--rule);
+  padding: 40px var(--pad);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.site-footer .wrap {
+  display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+}

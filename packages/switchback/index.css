@@ -1,0 +1,11 @@
+/* Switchback — @font-face declarations. */
+
+@font-face {
+  font-family: "Switchback";
+  src: url("./fonts/woff2/Switchback-Regular.woff2") format("woff2"),
+       url("./fonts/woff/Switchback-Regular.woff") format("woff"),
+       url("./fonts/otf/Switchback-Regular.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

@@ -1,0 +1,65 @@
+FONTLOG for NPS Fonts
+=====================
+
+This file provides detailed information on each font family in the
+nps-fonts project. Information should be updated as additional
+modifications are made.
+
+PROJECT
+-------
+NPS Fonts — open-source typefaces inspired by U.S. National Park Service
+signage, posters, and trail markers. Independent project, not affiliated
+with the NPS. See README.md and DISCLAIMER.md for details.
+
+
+CHANGELOG
+---------
+
+18 Apr 2026 (NPS Fonts contributors) — v0.0.1
+- Initial seed release.
+- Five families introduced: Wayfinder Sans, Wayfinder Serif, Campfire
+  Script, Switchback, Cairn.
+- Procedurally generated outlines covering Basic Latin (uppercase,
+  lowercase, digits, common punctuation, space).
+- Build pipeline (TypeScript / Bun → OTF/WOFF/WOFF2) established.
+- Specimen website and CI/CD pipelines in place.
+- Outlines are intentionally rough placeholders to be refined family-
+  by-family; metrics, vertical alignment, and character set should be
+  treated as load-bearing while drawing iterates.
+
+
+PER-FAMILY NOTES
+----------------
+
+### Wayfinder Sans
+Humanist sans-serif. Five static weights (Light/Regular/Medium/Bold/Black)
+with matching italics. Designed to share metrics with Wayfinder Serif so
+the two pair cleanly.
+
+### Wayfinder Serif
+Slab/transitional serif. Same weight axis as the Sans; vertical metrics
+deliberately matched. Text-first design with display capability at the
+heavier end.
+
+### Campfire Script
+Casual brush script in a single weight. Inspired by hand-painted park
+signs and WPA-era poster lettering. Connected lowercase, swashy capitals.
+
+### Switchback
+Rugged condensed slab display. Single weight. Vintage wood-type and
+western-poster lineage. All-caps optimized but lowercase included.
+
+### Cairn
+Bold geometric all-caps. Two weights (Regular and Bold). Signage and
+badge use; oversized counters for legibility at distance.
+
+
+ACKNOWLEDGEMENTS
+----------------
+N: NPS Fonts contributors
+W: https://github.com/stacksjs/nps-fonts
+D: Project maintainers and original outline generation
+
+Thanks to the broader open-source font community: the SIL OFL, opentype.js,
+wawoff2, fontTools, fontmake, fontbakery, and Google Fonts teams whose
+work makes this project possible.
