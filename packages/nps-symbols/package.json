@@ -1,0 +1,35 @@
+{
+  "name": "@nps-fonts/nps-symbols",
+  "version": "0.7.0",
+  "description": "NPS Symbols — Original parametric pictograph icon font — 23 NPS-themed symbols. OFL-1.1. Unaffiliated with the U.S. National Park Service.",
+  "keywords": [
+    "font",
+    "typography",
+    "webfont",
+    "ofl",
+    "national-parks",
+    "nps-symbols"
+  ],
+  "license": "OFL-1.1",
+  "homepage": "https://github.com/stacksjs/nps-fonts#nps-symbols",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stacksjs/nps-fonts.git",
+    "directory": "packages/nps-symbols"
+  },
+  "bugs": "https://github.com/stacksjs/nps-fonts/issues",
+  "main": "index.css",
+  "style": "index.css",
+  "files": [
+    "index.css",
+    "fonts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "name": "@nps-fonts/all",
-  "version": "0.2.0",
-  "description": "NPS Fonts meta-package — installs all five families.",
+  "version": "0.7.0",
+  "description": "NPS Fonts meta-package — installs all 4 families.",
   "license": "OFL-1.1",
   "homepage": "https://github.com/stacksjs/nps-fonts",
   "repository": {
@@ -24,10 +24,9 @@
     "*.css"
   ],
   "dependencies": {
-    "@nps-fonts/wayfinder-sans": "0.2.0",
-    "@nps-fonts/wayfinder-serif": "0.2.0",
-    "@nps-fonts/campfire-script": "0.2.0",
-    "@nps-fonts/switchback": "0.2.0",
-    "@nps-fonts/cairn": "0.2.0"
+    "@nps-fonts/summitgrade-1935": "0.7.0",
+    "@nps-fonts/redwood-serif": "0.7.0",
+    "@nps-fonts/campmate-script": "0.7.0",
+    "@nps-fonts/nps-symbols": "0.7.0"
   }
 }

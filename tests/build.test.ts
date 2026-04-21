@@ -1,102 +1,108 @@
 /**
- * Build smoke tests for the fork pipeline.
+ * Build smoke tests for the parametric families.
  */
 
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, test } from 'bun:test'
 import opentype from 'opentype.js'
-import { ALL_FAMILIES } from '../scripts/lib/common.ts'
-import { FAMILY_SOURCES } from '../scripts/sources.ts'
+import { ALL_FAMILIES, FAMILY_DISPLAY } from '../scripts/lib/common.ts'
 
 const FONTS_DIR = resolve(import.meta.dir, '..', 'fonts')
 
-function basename(stem: string, styleName: string): string {
-  return `${stem}-${styleName.replace(/\s+/g, '')}`
-}
-
 describe('built artifacts exist', () => {
   for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
-    for (const m of fam.sources) {
-      const base = basename(fam.newFileStem, m.styleName)
-      test(`${id}/${base}.otf`, () => {
-        expect(existsSync(resolve(FONTS_DIR, id, 'otf', `${base}.otf`))).toBe(true)
-      })
-      test(`${id}/${base}.ttf`, () => {
-        expect(existsSync(resolve(FONTS_DIR, id, 'ttf', `${base}.ttf`))).toBe(true)
-      })
-      test(`${id}/${base}.woff`, () => {
-        expect(existsSync(resolve(FONTS_DIR, id, 'woff', `${base}.woff`))).toBe(true)
-      })
-      test(`${id}/${base}.woff2`, () => {
-        expect(existsSync(resolve(FONTS_DIR, id, 'woff2', `${base}.woff2`))).toBe(true)
-      })
-    }
+    const meta = FAMILY_DISPLAY[id]
+    const base = `${meta.file}-Regular`
+    test(`${id}/otf/${base}.otf`, () => {
+      expect(existsSync(resolve(FONTS_DIR, id, 'otf', `${base}.otf`))).toBe(true)
+    })
+    test(`${id}/ttf/${base}.ttf`, () => {
+      expect(existsSync(resolve(FONTS_DIR, id, 'ttf', `${base}.ttf`))).toBe(true)
+    })
+    test(`${id}/woff/${base}.woff`, () => {
+      expect(existsSync(resolve(FONTS_DIR, id, 'woff', `${base}.woff`))).toBe(true)
+    })
+    test(`${id}/woff2/${base}.woff2`, () => {
+      expect(existsSync(resolve(FONTS_DIR, id, 'woff2', `${base}.woff2`))).toBe(true)
+    })
   }
 })
 
 describe('fonts re-parse cleanly', () => {
   for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
-    for (const m of fam.sources) {
-      const base = basename(fam.newFileStem, m.styleName)
-      test(`${id}/${m.styleName}`, async () => {
-        const buf = await Bun.file(resolve(FONTS_DIR, id, 'otf', `${base}.otf`)).arrayBuffer()
-        const font = opentype.parse(buf)
-        expect(font.unitsPerEm).toBeGreaterThan(0)
-        expect(font.glyphs.length).toBeGreaterThan(50)
-      })
-    }
-  }
-})
-
-describe('rename: family name updated', () => {
-  for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
+    const meta = FAMILY_DISPLAY[id]
+    const base = `${meta.file}-Regular`
     test(`${id}`, async () => {
-      const m = fam.sources[0]!
-      const base = basename(fam.newFileStem, m.styleName)
       const buf = await Bun.file(resolve(FONTS_DIR, id, 'otf', `${base}.otf`)).arrayBuffer()
       const font = opentype.parse(buf)
-      expect(font.names.fontFamily?.en).toBe(fam.newFamilyName)
+      expect(font.unitsPerEm).toBeGreaterThan(0)
+      expect(font.glyphs.length).toBeGreaterThan(20)
     })
   }
 })
 
-describe('attribution: copyright preserved + ours appended', () => {
+describe('family name matches manifest', () => {
   for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
+    const meta = FAMILY_DISPLAY[id]
+    const base = `${meta.file}-Regular`
     test(`${id}`, async () => {
-      const m = fam.sources[0]!
-      const base = basename(fam.newFileStem, m.styleName)
+      const buf = await Bun.file(resolve(FONTS_DIR, id, 'otf', `${base}.otf`)).arrayBuffer()
+      const font = opentype.parse(buf)
+      expect(font.names.fontFamily?.en).toBe(meta.display)
+    })
+  }
+})
+
+describe('copyright includes NPS Fonts credit', () => {
+  for (const id of ALL_FAMILIES) {
+    const meta = FAMILY_DISPLAY[id]
+    const base = `${meta.file}-Regular`
+    test(`${id}`, async () => {
       const buf = await Bun.file(resolve(FONTS_DIR, id, 'otf', `${base}.otf`)).arrayBuffer()
       const font = opentype.parse(buf)
       const cr = font.names.copyright?.en ?? ''
-      // Mentions either "Project Authors" (the OFL convention) or the source author surname
-      expect(cr.length).toBeGreaterThan(50)
+      expect(cr.length).toBeGreaterThan(20)
       expect(cr).toContain('NPS Fonts')
-      expect(cr).toContain(fam.newReservedFontName)
+      expect(cr).toContain(meta.display)
     })
   }
 })
 
-describe('cmap: covers Latin-1 supplement', () => {
-  const required = [0xC1, 0xC9, 0xCD, 0xD3, 0xDA, 0xE1, 0xE9, 0xED, 0xF3, 0xFA, 0xC7, 0xE7, 0xD1, 0xF1]
-  for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
-    test(`${id}`, async () => {
-      const m = fam.sources[0]!
-      const base = basename(fam.newFileStem, m.styleName)
-      const buf = await Bun.file(resolve(FONTS_DIR, id, 'otf', `${base}.otf`)).arrayBuffer()
-      const font = opentype.parse(buf)
-      const missing: string[] = []
-      for (const cp of required) {
-        const g = font.charToGlyph(String.fromCodePoint(cp))
-        if (!g || g.name === '.notdef')
-          missing.push(`U+${cp.toString(16).padStart(4, '0').toUpperCase()}`)
-      }
-      expect(missing).toEqual([])
-    })
-  }
+describe('NPS Symbols: pictographs at expected codepoints', () => {
+  const expected = [
+    [0xE000, 'arrowhead'],
+    [0xE001, 'mountain'],
+    [0xE002, 'tent'],
+    [0xE003, 'campfire'],
+    [0xE005, 'compass'],
+    [0xE006, 'sun'],
+  ] as const
+  test('all PUA + ASCII shortcuts present', async () => {
+    const buf = await Bun.file(resolve(FONTS_DIR, 'nps-symbols', 'otf', 'NPSSymbols-Regular.otf')).arrayBuffer()
+    const font = opentype.parse(buf)
+    expect(font.names.fontFamily?.en).toBe('NPS Symbols')
+    for (const [cp, name] of expected) {
+      const g = font.charToGlyph(String.fromCodePoint(cp))
+      expect(g.name).toBe(name)
+    }
+    expect(font.charToGlyph('M').name).toBe('mountain')
+    expect(font.charToGlyph('A').name).toBe('arrowhead')
+    expect(font.charToGlyph('T').name).toBe('tent')
+  })
+})
+
+describe('Campmate Script: GSUB liga is present', () => {
+  test('GSUB table with liga feature exists', async () => {
+    const buf = await Bun.file(resolve(FONTS_DIR, 'campmate-script', 'otf', 'CampmateScript-Regular.otf')).arrayBuffer()
+    const font = opentype.parse(buf)
+    expect(font.tables.gsub).toBeDefined()
+    const ligas = font.substitution.getLigatures('liga')
+    expect(ligas.length).toBeGreaterThanOrEqual(5)
+    // All ligature entries must reference real glyph indices (not 0 fallback)
+    for (const l of ligas) {
+      expect(l.by).toBeGreaterThan(0)
+      for (const s of l.sub) expect(s).toBeGreaterThan(0)
+    }
+  })
 })

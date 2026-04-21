@@ -14,8 +14,8 @@ language coverage, to building tooling. Welcome.
    updating `FONTLOG.txt`, `AUTHORS.md`, and the in-font copyright string
    per the OFL terms.
 3. **Reserved Font Names.** Modified versions distributed under a
-   different name must not use *Wayfinder Sans*, *Wayfinder Serif*,
-   *Campfire Script*, *Switchback*, or *Cairn* as primary font names —
+   different name must not use *Summitgrade 1935*, *Redwood Serif*,
+   *Campmate Script*, or *NPS Symbols* as primary font names —
    that is a Reserved Font Name protection under the OFL.
 
 ## Getting set up
@@ -43,7 +43,7 @@ You will need:
    feature, language coverage). Coordinate before drawing — concurrent
    edits to the same glyph create painful merges.
 2. Branch off `main`.
-3. Edit the relevant drawing script under `scripts/families/<family>.ts`
+3. Edit the relevant drawing script under `scripts/<family>.ts`
    (or the design notes under `sources/<family>/`).
 4. Run `bun run build:family <family>` to regenerate binaries.
 5. Run `bun run check` and address any new findings.

@@ -1,20 +1,30 @@
 # NPS Fonts
 
-Open-source typefaces inspired by U.S. National Park Service signage. Each family is a fork of a complementary OFL-licensed typeface, renamed and rebundled — released under the SIL Open Font License 1.1.
+Original open-source typefaces inspired by U.S. National Park Service
+signage. Every glyph drawn from scratch — no OFL forks. Released under
+the SIL Open Font License 1.1.
 
 > **Disclaimer.** This project is independent and **not affiliated with, endorsed by, or sponsored by** the U.S. National Park Service or the U.S. Department of the Interior. The names, designs, and aesthetics here are *inspired by* the broader public-lands visual tradition. See [`DISCLAIMER.md`](./DISCLAIMER.md).
 
 ## The families
 
-| Family               | Genre                              | Forked from                                                                                                  |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Wayfinder Sans**   | Vintage condensed display sans     | [Big Shoulders Display](https://fonts.google.com/specimen/Big+Shoulders+Display) — Patric King · OFL · variable axis |
-| **Wayfinder Serif**  | Friendly slab serif                | [Zilla Slab](https://fonts.google.com/specimen/Zilla+Slab) — Typotheque/Mozilla · OFL · 4 weights × italics    |
-| **Campfire Script**  | Casual upright brush script        | [Caveat Brush](https://fonts.google.com/specimen/Caveat+Brush) — Pablo Impallari · OFL                          |
-| **Switchback**       | Soft chunky display caps           | [Bowlby One](https://fonts.google.com/specimen/Bowlby+One) — Vernon Adams · OFL                                 |
-| **Cairn**            | Humanist signage sans              | [Public Sans](https://public-sans.digital.gov/) — USWDS · OFL · variable axis + italic                          |
+| Family               | Genre                                         | Reference inspiration                      |
+| -------------------- | --------------------------------------------- | ------------------------------------------ |
+| **Summitgrade 1935** | Vintage 1930s NPS display caps (all-caps)     | NPS 1935 routed-redwood signage            |
+| **Redwood Serif**    | Old-style serif with stroke contrast          | Vicarel Studios *John Muir Serif*          |
+| **Campmate Script**  | Rounded upright script with ligatures         | Vicarel Studios *VS Outdoor Script*        |
+| **NPS Symbols**      | Pictograph icon font (23 glyphs)              | Original — NPS-themed icons                |
 
-All families ship in **`.otf`**, **`.ttf`**, **`.woff`**, and **`.woff2`**. Wayfinder Sans and Cairn ship as variable fonts (single file with full weight axis 100–900).
+All families ship in **`.otf`**, **`.ttf`**, **`.woff`**, and **`.woff2`**.
+
+**Campmate Script** ships with 5 OpenType `liga` ligatures (`oo`, `ll`, `tt`, `ee`, `ss`). Enable with:
+
+```css
+font-family: "Campmate Script";
+font-feature-settings: "liga" on;
+```
+
+**NPS Symbols** carries 23 NPS-themed pictographs (mountain, tent, campfire, compass, arrowhead, pine, hiker, bear, trail markers, weather glyphs) at PUA codepoints `U+E000+` and ASCII shortcuts (`M` = mountain, `T` = tent, `F` = campfire, etc.).
 
 ## Install
 
@@ -25,33 +35,31 @@ Download the family ZIP from the [latest release](https://github.com/stacksjs/np
 ### Web (CDN)
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@nps-fonts/wayfinder-sans/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@nps-fonts/summitgrade-1935/index.css">
 ```
 
 ### npm
 
 ```bash
-bun add @nps-fonts/wayfinder-sans
-# or: npm install @nps-fonts/wayfinder-sans
+bun add @nps-fonts/summitgrade-1935
+# or: npm install @nps-fonts/summitgrade-1935
 ```
 
 ```css
-@import "@nps-fonts/wayfinder-sans";
+@import "@nps-fonts/summitgrade-1935";
 
-body { font-family: "Wayfinder Sans", system-ui, sans-serif; }
-
-/* Variable font — any weight 100–900 works */
-h1 { font-weight: 800; }
+h1 { font-family: "Summitgrade 1935", system-ui, sans-serif; }
 ```
 
 ### Self-hosted `@font-face`
 
 ```css
 @font-face {
-  font-family: "Wayfinder Sans";
-  src: url("/fonts/WayfinderSans-Variable.woff2") format("woff2-variations"),
-       url("/fonts/WayfinderSans-Variable.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Redwood Serif";
+  src: url("/fonts/RedwoodSerif-Regular.woff2") format("woff2"),
+       url("/fonts/RedwoodSerif-Regular.woff") format("woff"),
+       url("/fonts/RedwoodSerif-Regular.otf") format("opentype");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -67,50 +75,61 @@ Requires [Bun](https://bun.sh) 1.1+.
 
 ```bash
 bun install
-bun run build              # download upstream sources, rename, output to fonts/
-bun run build:family wayfinder-sans
-bun run web                # build the specimen site under web/dist
-bun run check              # sanity-check built fonts
-bun test tests/            # run smoke tests
+bun run build                            # build all four families
+bun run build:family summitgrade-1935    # build a single family
+bun run web                              # build the specimen site under web/dist
+bun run check                            # sanity-check built fonts
+bun test tests/                          # run smoke tests
 ```
 
-The build script downloads OFL sources from `google/fonts` to `vendor/`, renames the `name` table (preserving original copyright + appending ours), and writes OTF/TTF/WOFF/WOFF2 per master under `fonts/<family>/`.
+Each drawing script emits OTF / TTF / WOFF / WOFF2 under `fonts/<family>/`.
 
 ## Repository layout
 
 ```
 nps-fonts/
-├── sources/        # design briefs (human-readable per-family notes)
-├── vendor/        # cached OFL source files (git-ignored)
-├── fonts/         # built artifacts (.otf .ttf .woff .woff2) — committed
-├── packages/      # generated npm packages (one per family + meta)
+├── sources/                # design briefs (human-readable per-family notes)
+├── fonts/                  # built artifacts (.otf .ttf .woff .woff2) — committed
+├── packages/               # generated npm packages (one per family + meta)
 ├── scripts/
-│   ├── sources.ts        # per-family source URLs + attribution
-│   ├── fork.ts           # download + rename + emit
-│   ├── build.ts          # entry point (delegates to fork)
-│   ├── check.ts          # sanity checks
-│   ├── pack.ts           # generate npm packages
-│   ├── web.ts            # build specimen site
-│   └── lib/              # sfnt utilities, name-table rebuilder, woff wrapper
-├── web/           # specimen site source
-├── tests/         # smoke tests
-└── .github/       # CI/CD
+│   ├── build.ts            # build orchestrator
+│   ├── summitgrade-1935.ts # drawing script — display caps
+│   ├── redwood-serif.ts    # drawing script — old-style serif
+│   ├── campmate-script.ts  # drawing script — rounded script w/ ligatures
+│   ├── symbols.ts          # drawing script — NPS Symbols pictographs
+│   ├── pack.ts             # generate npm packages
+│   ├── web.ts              # build specimen site
+│   ├── render.ts           # render PNG specimens from built fonts
+│   ├── check.ts            # sanity checks
+│   └── lib/                # shared common metadata + WOFF wrapper
+├── web/                    # specimen site source
+├── tests/                  # smoke tests
+└── .github/                # CI/CD
 ```
 
-## Why fork?
+## From-scratch origins
 
-Quality type design takes years per family. Forking established OFL fonts — five exemplars of the genres we want to evoke — gives us **type-designer-quality outlines from day one** with full Latin coverage, kerning, ligatures, hinting, and (for Sans/Cairn) variable axes. We focus our effort on packaging, distribution, and the NPS-themed identity layer.
+v0.7.0 replaced the previous OFL-fork approach with four original
+parametric families drawn from scratch using `opentype.js`. The
+previous forks (Wayfinder Sans/Serif, Campfire Script, Switchback,
+Cairn, Routemark Sans, Trailmark Script) were removed.
 
-The original authors retain full credit in the binary, in `FONTLOG.txt`, and in `AUTHORS.md`. The OFL is built for exactly this kind of collaboration.
+This lets us ship a consistent visual system tuned specifically for
+NPS wayfinding aesthetics, without the attribution and renaming
+burden of maintaining multiple OFL forks.
 
 ## Contributing
 
-PRs welcome at every level — additional families, design notes, specimen polish, packaging improvements, hinting refinements, language coverage extensions. See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+PRs welcome at every level — additional weights, polish passes on
+specific glyphs, specimen site improvements, packaging, language
+coverage. See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## License
 
-[SIL Open Font License 1.1](./OFL.txt). You may use, modify, and redistribute these fonts — including in commercial work — provided you retain the license. **Reserved Font Names**: *Wayfinder Sans*, *Wayfinder Serif*, *Campfire Script*, *Switchback*, *Cairn*.
+[SIL Open Font License 1.1](./OFL.txt). You may use, modify, and redistribute these fonts — including in commercial work — provided you retain the license. **Reserved Font Names**: *Summitgrade 1935*, *Redwood Serif*, *Campmate Script*, *NPS Symbols*.
 
 ## Status
 
-**v0.2.0 — fork release.** All five families produce production-quality outlines (the originals are mature shipping fonts). Per-family aesthetic refinement (custom alternates, NPS-themed glyphs, badges) is the work for v0.3+.
+**v0.7.0 — original parametric release.** All four families are drawn
+from scratch. Per-glyph refinement (polish passes, hinting, kerning,
+language coverage extensions) is the work for v0.8+.

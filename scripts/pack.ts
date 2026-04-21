@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 /**
  * Generate per-family npm packages under packages/<family>/.
+ * All families are parametric originals — single regular weight.
  */
 
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { ALL_FAMILIES, type FamilyId } from './lib/common.ts'
-import { FAMILY_SOURCES, WEIGHT_VALUE } from './sources.ts'
+import { ALL_FAMILIES, FAMILY_DISPLAY, type FamilyId } from './lib/common.ts'
 
 const ROOT = resolve(import.meta.dir, '..')
 const FONTS = resolve(ROOT, 'fonts')
@@ -30,57 +30,29 @@ async function copyDir(src: string, dst: string) {
 }
 
 function buildCss(id: FamilyId): string {
-  const fam = FAMILY_SOURCES[id]
-  const lines: string[] = [
-    `/* ${fam.newFamilyName} — @font-face declarations. */`,
-    `/* Forked from ${fam.sourceFamily} (${fam.sourceLicense}) by ${fam.sourceAuthor}. */`,
+  const meta = FAMILY_DISPLAY[id]
+  const base = `${meta.file}-Regular`
+  return [
+    `/* ${meta.display} — original parametric font, drawn from scratch. */`,
+    '@font-face {',
+    `  font-family: "${meta.display}";`,
+    `  src: url("./fonts/woff2/${base}.woff2") format("woff2"),`,
+    `       url("./fonts/woff/${base}.woff") format("woff"),`,
+    `       url("./fonts/otf/${base}.otf") format("opentype");`,
+    `  font-weight: ${meta.weight};`,
+    `  font-style: ${meta.style};`,
+    '  font-display: swap;',
+    '}',
     '',
-  ]
-  for (const m of fam.sources) {
-    const styleSuffix = m.styleName.replace(/\s+/g, '')
-    const base = `${fam.newFileStem}-${styleSuffix}`
-    if (m.variable) {
-      const [wMin, wMax] = m.weightRange ?? [100, 900]
-      lines.push(
-        '@font-face {',
-        `  font-family: "${fam.newFamilyName}";`,
-        `  src: url("./fonts/woff2/${base}.woff2") format("woff2-variations"),`,
-        `       url("./fonts/woff2/${base}.woff2") format("woff2"),`,
-        `       url("./fonts/woff/${base}.woff") format("woff"),`,
-        `       url("./fonts/otf/${base}.otf") format("opentype-variations"),`,
-        `       url("./fonts/otf/${base}.otf") format("opentype");`,
-        `  font-weight: ${wMin} ${wMax};`,
-        `  font-style: ${m.italic ? 'italic' : 'normal'};`,
-        '  font-display: swap;',
-        '}',
-        '',
-      )
-    }
-    else {
-      const w = WEIGHT_VALUE[m.weight ?? 'Regular']
-      lines.push(
-        '@font-face {',
-        `  font-family: "${fam.newFamilyName}";`,
-        `  src: url("./fonts/woff2/${base}.woff2") format("woff2"),`,
-        `       url("./fonts/woff/${base}.woff") format("woff"),`,
-        `       url("./fonts/otf/${base}.otf") format("opentype");`,
-        `  font-weight: ${w};`,
-        `  font-style: ${m.italic ? 'italic' : 'normal'};`,
-        '  font-display: swap;',
-        '}',
-        '',
-      )
-    }
-  }
-  return lines.join('\n')
+  ].join('\n')
 }
 
 function buildPkgJson(id: FamilyId): object {
-  const fam = FAMILY_SOURCES[id]
+  const meta = FAMILY_DISPLAY[id]
   return {
     name: `@nps-fonts/${id}`,
     version: VERSION,
-    description: `${fam.newFamilyName} — open-source typeface inspired by U.S. National Park Service signage. Forked from ${fam.sourceFamily} (${fam.sourceLicense}). Unaffiliated with the NPS.`,
+    description: `${meta.display} — ${meta.tagline} OFL-1.1. Unaffiliated with the U.S. National Park Service.`,
     keywords: ['font', 'typography', 'webfont', 'ofl', 'national-parks', id],
     license: 'OFL-1.1',
     homepage: `https://github.com/stacksjs/nps-fonts#${id}`,
@@ -99,14 +71,12 @@ function buildPkgJson(id: FamilyId): object {
 }
 
 function buildReadme(id: FamilyId): string {
-  const fam = FAMILY_SOURCES[id]
+  const meta = FAMILY_DISPLAY[id]
   return `# @nps-fonts/${id}
 
-${fam.newFamilyName} — open-source typeface inspired by U.S. National Park Service signage. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
+${meta.display} — ${meta.tagline}
 
-## Heritage
-
-Forked from **[${fam.sourceFamily}](${fam.sourceRepo})** by ${fam.sourceAuthor} (${fam.sourceLicense}). Renamed and re-released under SIL OFL 1.1.
+Original parametric font, drawn from scratch by NPS Fonts contributors. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
 
 ## Install
 
@@ -120,7 +90,7 @@ bun add @nps-fonts/${id}
 \`\`\`css
 @import "@nps-fonts/${id}";
 
-body { font-family: "${fam.newFamilyName}", system-ui, sans-serif; }
+body { font-family: "${meta.display}", system-ui, sans-serif; }
 \`\`\`
 
 Or via CDN:
@@ -133,14 +103,14 @@ Or via CDN:
 
 | Format | Path |
 |---|---|
-| OTF    | \`fonts/otf/${fam.newFileStem}-*.otf\` |
-| TTF    | \`fonts/ttf/${fam.newFileStem}-*.ttf\` |
-| WOFF   | \`fonts/woff/${fam.newFileStem}-*.woff\` |
-| WOFF2  | \`fonts/woff2/${fam.newFileStem}-*.woff2\` |
+| OTF    | \`fonts/otf/${meta.file}-Regular.otf\` |
+| TTF    | \`fonts/ttf/${meta.file}-Regular.ttf\` |
+| WOFF   | \`fonts/woff/${meta.file}-Regular.woff\` |
+| WOFF2  | \`fonts/woff2/${meta.file}-Regular.woff2\` |
 
 ## Project
 
-Source, full specimen, and the other four families:
+Source, specimens, and the full family suite:
 <https://github.com/stacksjs/nps-fonts>
 `
 }
@@ -168,7 +138,7 @@ async function buildMetaPackage() {
   const pkg = {
     name: '@nps-fonts/all',
     version: VERSION,
-    description: 'NPS Fonts meta-package — installs all five families.',
+    description: `NPS Fonts meta-package — installs all ${ALL_FAMILIES.length} families.`,
     license: 'OFL-1.1',
     homepage: 'https://github.com/stacksjs/nps-fonts',
     repository: {
@@ -194,7 +164,7 @@ async function buildMetaPackage() {
     resolve(dir, 'README.md'),
     `# @nps-fonts/all
 
-The full NPS Fonts suite — all five families in one install.
+The full NPS Fonts suite — ${ALL_FAMILIES.length} original parametric families in one install.
 
 \`\`\`bash
 bun add @nps-fonts/all
@@ -204,7 +174,7 @@ bun add @nps-fonts/all
 @import "@nps-fonts/all";
 \`\`\`
 
-See <https://github.com/stacksjs/nps-fonts> for individual families and the full specimen.
+See <https://github.com/stacksjs/nps-fonts> for individual families and specimens.
 `,
   )
   await copyFile(resolve(ROOT, 'OFL.txt'), resolve(dir, 'LICENSE'))

@@ -4,7 +4,11 @@
  */
 
 import { deflateSync } from 'node:zlib'
-import { pad4 } from './sfnt.ts'
+
+/** Round up to nearest multiple of 4 (sfnt table alignment). */
+function pad4(n: number): number {
+  return (n + 3) & ~3
+}
 
 export function sfntToWoff(sfnt: Buffer): Buffer {
   const sfntVersion = sfnt.readUInt32BE(0)

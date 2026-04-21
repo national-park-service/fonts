@@ -2,111 +2,59 @@ FONTLOG for NPS Fonts
 =====================
 
 This file provides detailed information on each font family in the
-nps-fonts project, including the upstream sources we forked from and
-the modifications we apply. Information is updated as releases ship.
+nps-fonts project.
 
 PROJECT
 -------
-NPS Fonts — open-source typefaces inspired by U.S. National Park Service
-signage. Independent project, not affiliated with the NPS.
+NPS Fonts — original open-source typefaces inspired by U.S. National
+Park Service signage. Independent project, not affiliated with the NPS.
 
-Each family is a fork of an open-source typeface in the appropriate
-genre, renamed to a Reserved Font Name we hold and re-released under
-the SIL Open Font License v1.1. Original copyrights are preserved in
-each binary; ours are appended.
+All four families are drawn from scratch using opentype.js (no OFL
+forks). They share a visual system tuned for NPS wayfinding aesthetics:
+routed-redwood display caps, old-style serif text, rounded trailhead
+script, and a pictograph icon set.
 
 
 CHANGELOG
 ---------
 
-19 Apr 2026 (NPS Fonts contributors) — v0.2.0
-- Pivoted to fork-based pipeline. Each family now derives from an
-  established OFL-licensed source, renamed and repackaged.
-- Per-family sources:
-    Wayfinder Sans   ← Big Shoulders Display (Patric King, OFL)
-                       — variable font, weight axis 100–900
-    Wayfinder Serif  ← Zilla Slab (Typotheque / Mozilla, OFL)
-                       — Light/Regular/Medium/Bold + matching italics
-    Campfire Script  ← Caveat Brush (Pablo Impallari, OFL)
-                       — single weight
-    Switchback       ← Bowlby One (Vernon Adams, OFL)
-                       — single weight
-    Cairn            ← Public Sans (USWDS, OFL)
-                       — variable font upright + italic, weight 100–900
-- 13 masters across 5 families (~5 MB total, all formats).
-- Outputs: .otf, .ttf, .woff, .woff2 per master.
-- Each binary preserves the upstream copyright + license verbatim and
-  appends ours per OFL §1. Reserved Font Names claimed for each family.
-- Removed the v0.0.x / v0.1.x parametric drawing code. The fork pipeline
-  produces type-designer-quality outlines that the parametric system
-  could not approach.
-
-19 Apr 2026 (NPS Fonts contributors) — v0.1.0
-- Refined parametric outline construction, Latin-1 coverage, kerning,
-  ligatures, italic overrides, polished specimen, expanded test suite.
-
-18 Apr 2026 (NPS Fonts contributors) — v0.0.1
-- Initial seed release with procedural outline placeholders.
-- Build pipeline, CI/CD, web specimen, npm packaging established.
+20 Apr 2026 (NPS Fonts contributors) — v0.7.0 — original parametric release
+- REMOVED all OFL-forked families (Wayfinder Sans, Wayfinder Serif,
+  Campfire Script, Switchback, Cairn, Routemark Sans, Trailmark Script).
+- ADDED Summitgrade 1935 (display caps, all-caps, routed-redwood NPS
+  1935-era signage aesthetic). 51 glyphs.
+- ADDED Redwood Serif (old-style / transitional serif with stroke
+  contrast and bracketed serifs, both cases). 77 glyphs.
+- ADDED Campmate Script (rounded upright script with 5 OpenType liga
+  ligatures: oo, ll, tt, ee, ss). 82 glyphs.
+- RETAINED NPS Symbols (23 pictographs).
+- Reworked scripts/pack.ts, scripts/web.ts, scripts/check.ts,
+  scripts/render.ts to drive from a single FAMILY_DISPLAY metadata
+  record in scripts/lib/common.ts. Removed scripts/sources.ts,
+  scripts/fork.ts, and associated sfnt-editing helpers since there
+  are no forks to manage.
+- Fixed a fill-rule / winding inconsistency in halfRing('top') vs.
+  halfRing('bottom') that had caused stroke cancellation in the S
+  glyph when a diagonal connector crossed a half-arc counter.
+- Fixed ligature GSUB emission: opentype.js's substitution.add
+  requires numeric glyph indices, not names, or the resulting
+  ligature entries in the GSUB table all resolve to glyph 0.
 
 
-PER-FAMILY ATTRIBUTION
-----------------------
+LICENSE
+-------
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+https://openfontlicense.org
 
-### Wayfinder Sans
-- Source: **Big Shoulders Display** by Patric King (House Industries)
-  and the Big Shoulders Project Authors.
-- Source license: SIL Open Font License v1.1.
-- Source repository:
-  https://github.com/google/fonts/tree/main/ofl/bigshouldersdisplay
-- Original Reserved Font Name: "Big Shoulders Display".
-- Our modifications: name-table rename to "Wayfinder Sans". Outlines
-  unchanged.
-
-### Wayfinder Serif
-- Source: **Zilla Slab** by Typotheque, commissioned by Mozilla.
-- Source license: SIL Open Font License v1.1.
-- Source repository:
-  https://github.com/google/fonts/tree/main/ofl/zillaslab
-- Original Reserved Font Name: "Zilla Slab".
-- Our modifications: name-table rename to "Wayfinder Serif". Outlines
-  unchanged.
-
-### Campfire Script
-- Source: **Caveat Brush** by Pablo Impallari (Impallari Type).
-- Source license: SIL Open Font License v1.1.
-- Source repository:
-  https://github.com/google/fonts/tree/main/ofl/caveatbrush
-- Original Reserved Font Name: "Caveat Brush".
-- Our modifications: name-table rename to "Campfire Script". Outlines
-  unchanged.
-
-### Switchback
-- Source: **Bowlby One** by Vernon Adams.
-- Source license: SIL Open Font License v1.1.
-- Source repository:
-  https://github.com/google/fonts/tree/main/ofl/bowlbyone
-- Original Reserved Font Name: "Bowlby One".
-- Our modifications: name-table rename to "Switchback". Outlines
-  unchanged.
-
-### Cairn
-- Source: **Public Sans** by the U.S. Web Design System and Public Sans
-  Project Authors.
-- Source license: SIL Open Font License v1.1.
-- Source repository:
-  https://github.com/google/fonts/tree/main/ofl/publicsans
-- Original Reserved Font Name: "Public Sans".
-- Our modifications: name-table rename to "Cairn". Outlines unchanged.
+Reserved Font Names: "Summitgrade 1935", "Redwood Serif",
+"Campmate Script", "NPS Symbols".
 
 
 ACKNOWLEDGEMENTS
 ----------------
-Enormous thanks to the original authors of the upstream fonts —
-Patric King, Typotheque, Pablo Impallari, Vernon Adams, and the U.S.
-Web Design System team — without whose work this project would not
-exist. The OFL is what makes collaborative font work like this
-possible.
-
-N: NPS Fonts contributors
-W: https://github.com/stacksjs/nps-fonts
+NPS Fonts contributors — original parametric glyph drawings.
+opentype.js (https://github.com/opentypejs/opentype.js) — OpenType
+font construction and serialization.
+wawoff2 — WOFF2 compression.
+@resvg/resvg-js — specimen PNG rendering.

@@ -10,9 +10,9 @@ fonts" and refers to a stylistic tradition — public-lands signage,
 trailhead markers, and WPA-era park posters — not to any official
 typeface program.
 
-The five typefaces in this project — **Wayfinder Sans**, **Wayfinder
-Serif**, **Campfire Script**, **Switchback**, and **Cairn** — are
-original works whose names and aesthetic choices are inspired by that
+The four typefaces in this project — **Summitgrade 1935**, **Redwood
+Serif**, **Campmate Script**, and **NPS Symbols** — are original
+parametric works whose names and aesthetic choices are inspired by that
 tradition. They are not reproductions of, derivatives of, or substitutes
 for any typeface owned, commissioned, or used by the NPS, including
 (but not limited to) the official NPS Rawlinson typeface family.

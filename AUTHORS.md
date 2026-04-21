@@ -1,20 +1,27 @@
 # Authors
 
-NPS Fonts is a derivative project. Each family forks an open-source
-typeface and renames it. The original authors are credited below per
-the SIL Open Font License.
+All four NPS Fonts families are drawn from scratch — no upstream
+sources. Every glyph in every family is original work by the NPS
+Fonts contributors.
 
-## Original authors (upstream sources)
+## Families
 
-| Family             | Source font           | Original author(s)                                                      | License |
-| ------------------ | --------------------- | ------------------------------------------------------------------------ | ------- |
-| Wayfinder Sans     | Big Shoulders Display | Patric King (House Industries) and the Big Shoulders Project Authors    | OFL-1.1 |
-| Wayfinder Serif    | Zilla Slab            | Typotheque, commissioned by Mozilla                                      | OFL-1.1 |
-| Campfire Script    | Caveat Brush          | Pablo Impallari (Impallari Type)                                         | OFL-1.1 |
-| Switchback         | Bowlby One            | Vernon Adams                                                             | OFL-1.1 |
-| Cairn              | Public Sans           | U.S. Web Design System (USWDS) and Public Sans Project Authors           | OFL-1.1 |
+| Family             | Author(s)               |
+| ------------------ | ----------------------- |
+| Summitgrade 1935   | NPS Fonts contributors  |
+| Redwood Serif      | NPS Fonts contributors  |
+| Campmate Script    | NPS Fonts contributors  |
+| NPS Symbols        | NPS Fonts contributors  |
 
-## Maintainers (this project)
+## Tools
+
+- [opentype.js](https://github.com/opentypejs/opentype.js) — font
+  construction and serialization.
+- [wawoff2](https://github.com/fetiska/wawoff2) — WOFF2 compression.
+- [@resvg/resvg-js](https://github.com/yisibl/resvg-js) — specimen PNG
+  rendering.
+
+## Maintainers
 
 - **Chris Breuer** — project lead
 

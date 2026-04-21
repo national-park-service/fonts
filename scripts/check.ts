@@ -1,15 +1,14 @@
 #!/usr/bin/env bun
 /**
  * Sanity checks on built fonts: re-parse each output, verify metadata
- * was renamed, glyph count + cmap coverage are reasonable, and
- * critical tables (GPOS, GSUB, name, head) are present.
+ * is set, glyph count + cmap coverage are reasonable, and that the
+ * declared family name in the `name` table matches the manifest.
  */
 
 import { readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import opentype from 'opentype.js'
-import { ALL_FAMILIES } from './lib/common.ts'
-import { FAMILY_SOURCES } from './sources.ts'
+import { ALL_FAMILIES, FAMILY_DISPLAY } from './lib/common.ts'
 
 const FONTS_DIR = resolve(import.meta.dir, '..', 'fonts')
 
@@ -24,7 +23,7 @@ async function main() {
   let checked = 0
 
   for (const id of ALL_FAMILIES) {
-    const fam = FAMILY_SOURCES[id]
+    const meta = FAMILY_DISPLAY[id]
     const otfDir = resolve(FONTS_DIR, id, 'otf')
     let entries: string[] = []
     try {
@@ -50,26 +49,19 @@ async function main() {
         continue
       }
       checked++
-      // Family name was renamed
-      if (font.names.fontFamily?.en !== fam.newFamilyName) {
+
+      if (font.names.fontFamily?.en !== meta.display) {
         issues.push({
           level: 'error',
           file,
-          message: `family name not renamed: got "${font.names.fontFamily?.en}", expected "${fam.newFamilyName}"`,
+          message: `family name mismatch: got "${font.names.fontFamily?.en}", expected "${meta.display}"`,
         })
       }
-      // Copyright was preserved + appended
       const cr = font.names.copyright?.en ?? ''
-      if (!cr.includes(fam.sourceFamily.split(' ')[0]!) && !cr.includes('Project Authors')) {
-        issues.push({ level: 'warn', file, message: 'copyright does not appear to credit the original author' })
-      }
       if (!cr.includes('NPS Fonts')) {
-        issues.push({ level: 'warn', file, message: 'copyright missing our additions' })
+        issues.push({ level: 'warn', file, message: 'copyright missing "NPS Fonts" credit' })
       }
-      // Reserved Font Name claimed
-      if (!cr.includes(fam.newReservedFontName)) {
-        issues.push({ level: 'warn', file, message: 'Reserved Font Name not claimed in copyright' })
-      }
+
       console.log(
         `✓ ${file.padEnd(40)} `
         + `glyphs=${String(font.glyphs.length).padStart(4)} `

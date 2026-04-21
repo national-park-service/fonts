@@ -48,7 +48,7 @@ jobs:
       - name: Build family ZIPs
         run: |
           mkdir -p dist
-          for fam in wayfinder-sans wayfinder-serif campfire-script switchback cairn; do
+          for fam in summitgrade-1935 redwood-serif campmate-script nps-symbols; do
             cd fonts && zip -r "../dist/nps-fonts-${fam}-${{ steps.ver.outputs.version }}.zip" "$fam" && cd ..
           done
           cd fonts && zip -r "../dist/nps-fonts-all-${{ steps.ver.outputs.version }}.zip" . && cd ..

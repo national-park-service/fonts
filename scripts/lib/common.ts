@@ -157,19 +157,79 @@ export const CHARSET_BY_CP: Map<number, CharsetEntry> = new Map(
 )
 
 export const ALL_FAMILIES = [
-  'wayfinder-sans',
-  'wayfinder-serif',
-  'campfire-script',
-  'switchback',
-  'cairn',
+  'summitgrade-1935',
+  'redwood-serif',
+  'campmate-script',
+  'nps-symbols',
 ] as const
 
 export type FamilyId = (typeof ALL_FAMILIES)[number]
 
-export const FAMILY_DISPLAY: Record<FamilyId, { display: string, file: string }> = {
-  'wayfinder-sans': { display: 'Wayfinder Sans', file: 'WayfinderSans' },
-  'wayfinder-serif': { display: 'Wayfinder Serif', file: 'WayfinderSerif' },
-  'campfire-script': { display: 'Campfire Script', file: 'CampfireScript' },
-  'switchback': { display: 'Switchback', file: 'Switchback' },
-  'cairn': { display: 'Cairn', file: 'Cairn' },
+export interface FamilyMeta {
+  /** Human display name. */
+  display: string
+  /** Output filename stem (no extension, no weight suffix). */
+  file: string
+  /** Short genre / one-liner for the specimen site and README. */
+  tagline: string
+  /** Hero display string. */
+  hero: string
+  /** Pangram/sample string for specimen waterfalls. */
+  pangram: string
+  /** CSS weight — all current families are single-weight (400). */
+  weight: number
+  /** `font-style` value. */
+  style: 'normal' | 'italic'
 }
+
+export const FAMILY_DISPLAY: Record<FamilyId, FamilyMeta> = {
+  'summitgrade-1935': {
+    display: 'Summitgrade 1935',
+    file: 'Summitgrade1935',
+    tagline: 'Vintage 1930s NPS display caps — routed-redwood, CCC-era.',
+    hero: 'SUMMITGRADE',
+    pangram: 'CRATER LAKE · EST 1902 · ELEV 7100 FT',
+    weight: 400,
+    style: 'normal',
+  },
+  'redwood-serif': {
+    display: 'Redwood Serif',
+    file: 'RedwoodSerif',
+    tagline: 'Old-style serif with bracketed serifs and stroke contrast — John Muir field-journal warmth.',
+    hero: 'Redwood',
+    pangram: 'The mountains are calling and I must go.',
+    weight: 400,
+    style: 'normal',
+  },
+  'campmate-script': {
+    display: 'Campmate Script',
+    file: 'CampmateScript',
+    tagline: 'Soft rounded upright script with ligatures — perfectly imperfect trailhead lettering.',
+    hero: 'Campmate',
+    pangram: 'Welcome to Crooked River Camp',
+    weight: 400,
+    style: 'normal',
+  },
+  'nps-symbols': {
+    display: 'NPS Symbols',
+    file: 'NPSSymbols',
+    tagline: 'Original parametric pictograph icon font — 23 NPS-themed symbols.',
+    hero: 'AMTFP',
+    pangram: 'AMTFPCSLW*BHODX',
+    weight: 400,
+    style: 'normal',
+  },
+}
+
+const PARAMETRIC_SET: ReadonlySet<FamilyId> = new Set<FamilyId>([
+  'summitgrade-1935',
+  'redwood-serif',
+  'campmate-script',
+  'nps-symbols',
+])
+
+/** Families that are forked from an upstream OFL source. (None remain — all four families are drawn from scratch.) */
+export const FORKED_FAMILIES = ALL_FAMILIES.filter(f => !PARAMETRIC_SET.has(f)) as readonly FamilyId[]
+
+/** Families built parametrically from scratch (no upstream source). */
+export const PARAMETRIC_FAMILIES: readonly FamilyId[] = [...PARAMETRIC_SET]
