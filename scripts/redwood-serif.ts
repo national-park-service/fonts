@@ -34,10 +34,10 @@ const CAP = 700
 const XH = 500                   // bookish large x-height
 const ASCENDER = 720             // ascender reaches just above CAP
 const DESCENDER = -200
-const STEM = 105                 // heavy vertical stem for bookish weight
-const THIN = 50                  // thin stroke (~2.1 : 1 contrast)
-const LC_STEM = 96               // lowercase stem slightly lighter
-const LC_THIN = 48
+const STEM = 135                 // heavy vertical stem for bookish weight
+const THIN = 68                  // thin stroke (~2.0 : 1 contrast)
+const LC_STEM = 120              // lowercase stem slightly lighter
+const LC_THIN = 60
 const LSB = 90
 const RSB = 90
 const KAPPA = 0.5522847498307936
@@ -66,6 +66,16 @@ function rect(p: opentype.Path, x: number, y: number, w: number, h: number) {
   p.lineTo(x + w, y)
   p.lineTo(x + w, y + h)
   p.lineTo(x, y + h)
+  p.close()
+}
+
+// A rect drawn in the OPPOSITE winding direction — used to carve a hole
+// from an existing filled region (non-zero winding subtracts).
+function rectHole(p: opentype.Path, x: number, y: number, w: number, h: number) {
+  p.moveTo(x, y)
+  p.lineTo(x, y + h)
+  p.lineTo(x + w, y + h)
+  p.lineTo(x + w, y)
   p.close()
 }
 
@@ -364,7 +374,7 @@ const B: Drawer = (p) => {
 }
 
 // ---------------------------------------------------------------------------
-// C — open bowl with short upper beak and small lower terminal.
+// C — left half-ring with short upper/lower arms and drop terminals.
 // ---------------------------------------------------------------------------
 const C: Drawer = (p) => {
   const w = ROUND_W
@@ -375,17 +385,16 @@ const C: Drawer = (p) => {
   const ry = CAP / 2
   const stroke = THIN + 42
 
-  // Outer C ring — we draw a full ellipse hollow then chisel out the right
-  // opening with a large rect positioned to the right of cx.
-  ellipse(p, cx, cy, rx, ry)
-  ellipse(p, cx, cy, rx - stroke, ry - stroke * 0.85, true)
-  // Carve the right mouth opening.
-  rect(p, cx + rx * 0.15, cy - ry * 0.55, rx, ry * 1.1)
+  halfRing(p, cx, cy, rx, ry, stroke, 'left')
 
-  // Small beaked upper terminal (old-style spur at top-right of the bowl).
-  rect(p, cx + rx * 0.15 - 12, CAP - stroke - 4, 20, stroke * 0.75)
-  // Small lower terminal with a soft drop.
-  dropTerminal(p, cx + rx * 0.35, stroke * 0.55, THIN + 30, THIN + 40)
+  // Short top arm extending right from the ring top.
+  const armLen = w * 0.20
+  rect(p, cx - 4, CAP - stroke, armLen + 4, stroke)
+  rect(p, cx - 4, 0, armLen + 4, stroke)
+
+  // Drop terminals at the arm ends.
+  dropTerminal(p, cx + armLen, CAP - stroke * 0.5, THIN + 30, THIN + 40)
+  dropTerminal(p, cx + armLen, stroke * 0.5, THIN + 30, THIN + 40)
 
   return { advance: LSB + w + RSB }
 }
@@ -458,7 +467,7 @@ const F: Drawer = (p) => {
 }
 
 // ---------------------------------------------------------------------------
-// G — like C with a short inner spur and a small right shelf.
+// G — like C with a right vertical spur and a jawline.
 // ---------------------------------------------------------------------------
 const G: Drawer = (p) => {
   const w = ROUND_W
@@ -469,17 +478,20 @@ const G: Drawer = (p) => {
   const ry = CAP / 2
   const stroke = THIN + 42
 
-  ellipse(p, cx, cy, rx, ry)
-  ellipse(p, cx, cy, rx - stroke, ry - stroke * 0.85, true)
-  rect(p, cx + rx * 0.18, cy - ry * 0.2, rx, ry * 0.75)
+  halfRing(p, cx, cy, rx, ry, stroke, 'left')
 
-  // Horizontal shelf bar at mid-height on the right.
-  rect(p, cx + rx * 0.18 - 22, cy - 4, rx * 0.7, THIN + 24)
-  // Vertical spur dropping from shelf to the lower bowl rim.
-  rect(p, x0 + w - stroke, 0, stroke, cy + 8)
+  // Top arm + drop terminal.
+  const armLen = w * 0.20
+  rect(p, cx - 4, CAP - stroke, armLen + 4, stroke)
+  dropTerminal(p, cx + armLen, CAP - stroke * 0.5, THIN + 30, THIN + 40)
 
-  // Upper beak terminal.
-  rect(p, cx + rx * 0.18 - 12, CAP - stroke - 4, 20, stroke * 0.75)
+  // Extended bottom arm (the G jaw).
+  const botArmLen = w * 0.45
+  rect(p, cx - 4, 0, botArmLen + 4, stroke)
+
+  // Vertical spur on the upper-right, dropping from cy to baseline.
+  const spurX = x0 + w - stroke
+  rect(p, spurX, 0, stroke, cy - 6)
 
   return { advance: LSB + w + RSB }
 }
@@ -778,21 +790,21 @@ const U: Drawer = (p) => {
 }
 
 // ---------------------------------------------------------------------------
-// V — two diagonals meeting at baseline.
+// V — two diagonals meeting at baseline (old-style: left is heavier).
 // ---------------------------------------------------------------------------
 const V: Drawer = (p) => {
   const w = CAP * 0.88
   const x0 = LSB
   const cx = x0 + w / 2
-  const diaL = STEM - 12       // left is heavy in old-style
-  const diaR = THIN + 20
+  const diaL = STEM - 38       // heavy left
+  const diaR = THIN + 6        // thin right
 
   legStroke(p, cx + OV, x0 + diaL / 2, 0, CAP, diaL)
   legStroke(p, cx - OV, x0 + w - diaR / 2, 0, CAP, diaR)
   rect(p, cx - diaL * 0.4, 0, diaL * 0.8, 6)
 
-  slabSerif(p, x0 + diaL / 2, diaL, CAP, { side: 'top', extL: 26, extR: 22, height: 22 })
-  slabSerif(p, x0 + w - diaR / 2, diaR, CAP, { side: 'top', extL: 22, extR: 26, height: 22 })
+  slabSerif(p, x0 + diaL / 2, diaL, CAP, { side: 'top', extL: 28, extR: 20, height: 20 })
+  slabSerif(p, x0 + w - diaR / 2, diaR, CAP, { side: 'top', extL: 20, extR: 28, height: 20 })
 
   return { advance: LSB + w + RSB }
 }
@@ -803,8 +815,8 @@ const V: Drawer = (p) => {
 const W: Drawer = (p) => {
   const w = WIDE_W * 1.10
   const x0 = LSB
-  const dia1 = STEM - 22
-  const dia2 = THIN + 18
+  const dia1 = STEM - 42
+  const dia2 = THIN + 2
   const cx = x0 + w / 2
   const footL = x0 + w * 0.28
   const footR = x0 + w * 0.72
@@ -831,8 +843,8 @@ const W: Drawer = (p) => {
 const X: Drawer = (p) => {
   const w = CAP * 0.84
   const x0 = LSB
-  const dia1 = STEM - 14
-  const dia2 = THIN + 18
+  const dia1 = STEM - 30
+  const dia2 = THIN + 6
   legStroke(p, x0, x0 + w, 0, CAP, dia1)
   legStroke(p, x0 + w, x0, 0, CAP, dia2)
   const cx = x0 + w / 2
@@ -854,8 +866,8 @@ const Y: Drawer = (p) => {
   const x0 = LSB
   const cx = x0 + w / 2
   const peakY = CAP * 0.46
-  const diaL = STEM - 18
-  const diaR = THIN + 16
+  const diaL = STEM - 36
+  const diaR = THIN + 4
 
   legStroke(p, cx - diaL / 2 + OV, x0 + diaL / 2, peakY, CAP, diaL)
   legStroke(p, cx + diaR / 2 - OV, x0 + w - diaR / 2, peakY, CAP, diaR)
@@ -949,24 +961,35 @@ function drawLeftBowl(p: opentype.Path, stemLeftX: number, bottomY: number, w: n
 //     stem. Both bowls are D-shapes that close back onto the stem's left edge.
 // ---------------------------------------------------------------------------
 const a: Drawer = (p) => {
-  const w = XH * 1.12
+  const w = XH * 1.16
   const x0 = LSB
   const stemX = x0 + w - LC_STEM
   const stemCx = stemX + LC_STEM / 2
-  const stroke = LC_THIN + 34
+  const stroke = LC_THIN + 32
+  // Split between upper arch and lower bowl.
+  const waistY = XH * 0.54
 
   // Right stem — full x-height.
   rect(p, stemX, 0, LC_STEM, XH)
 
-  // Upper (smaller) bowl — about 45% of x-height, attached to stem LEFT edge.
-  const upperBowlH = XH * 0.48
-  const upperBowlW = w - LC_STEM - 10
-  drawLeftBowl(p, stemX, XH - upperBowlH, upperBowlW, upperBowlH, stroke)
+  // Lower bowl: a closed ellipse (annulus) filling from baseline up to
+  // waistY + a little overlap. Treat it as an 'o' clipped by the stem.
+  const lowRY = waistY / 2 + 2
+  const lowCY = lowRY
+  const lowRX = (stemX - x0) / 2 + LC_STEM * 0.25
+  const lowCX = stemX - lowRX + LC_STEM / 3
+  ellipse(p, lowCX, lowCY, lowRX, lowRY)
+  ellipse(p, lowCX, lowCY, lowRX - stroke, lowRY - stroke * 0.85, true)
 
-  // Lower (larger) bowl — about 55% of x-height, also on stem LEFT edge.
-  const lowerBowlH = XH * 0.58
-  const lowerBowlW = w - LC_STEM
-  drawLeftBowl(p, stemX, 0, lowerBowlW, lowerBowlH, stroke)
+  // Upper arch: a top halfRing from the stem top curving left down to the
+  // waist. Opens LEFT on the bottom (the typical 'a' throat).
+  const upRY = XH - waistY
+  const upCY = waistY
+  const upRX = lowRX - 6
+  const upCX = lowCX
+  halfRing(p, upCX, upCY, upRX, upRY, stroke, 'top')
+  // Short horizontal bar closing the arch at the waist, joining into stem.
+  rect(p, upCX - upRX + stroke * 0.3, waistY - stroke * 0.45, upRX + (stemX - upCX) + OV, stroke * 0.9)
 
   // Foot serif on stem.
   lcFoot(p, stemCx, LC_STEM, 0, { side: 'bottom', extL: LC_SERIF_EXT * 0.6, extR: LC_SERIF_EXT })
@@ -1049,52 +1072,59 @@ const d: Drawer = (p) => {
 //     and top arm stitching them together, and (d) a small drop terminal.
 // ---------------------------------------------------------------------------
 const e: Drawer = (p) => {
-  const w = XH * 1.02
+  const w = XH * 1.04
   const x0 = LSB
   const cx = x0 + w / 2
   const cy = XH / 2
   const rx = w / 2
   const ry = XH / 2
-  const stroke = LC_THIN + 34
-  const barY = cy + 6                        // crossbar sits slightly above middle
+  const stroke = LC_THIN + 32
+  const barY = cy + 4                        // bar slightly above center
 
-  // Top half-ring (forms the TOP of the e — outer and inner contours).
-  halfRing(p, cx, barY, rx, XH - barY, stroke, 'top')
-  // Bottom half-ring (forms the bottom curve, open on the right).
-  halfRing(p, cx, barY, rx, barY, stroke, 'bottom')
-  // Crossbar — solid rect joining them.
-  rect(p, x0 + stroke * 0.5, barY - (THIN + 14) / 2, w - stroke * 1.0, THIN + 14)
-  // Carve right mouth below bar with a CCW rect that erases via winding —
-  // instead of relying on winding carving, we simply don't draw anything
-  // there. The bottom half-ring is already open on the right.
-
-  // Small drop at lower terminal.
-  dropTerminal(p, cx + rx * 0.55, stroke * 0.4, THIN + 18, THIN + 26)
+  // Full stressed ring (the 'o' shape).
+  ellipse(p, cx, cy, rx, ry)
+  ellipse(p, cx, cy, rx - stroke, ry - stroke * 0.85, true)
+  // Solid crossbar across the middle.
+  rect(p, x0 + stroke * 0.4, barY - (THIN + 10) / 2, w - stroke * 0.8, THIN + 10)
+  // Carve the right-side mouth BELOW the bar — a narrow slot through the
+  // ring at the lower-right where a serif 'e' opens up.
+  // The slot must cross only the ring wall, not the interior hole, so we
+  // place it just outside the inner ellipse's right extent.
+  const iRX = rx - stroke
+  const slotX = cx + iRX - OV
+  const slotY = stroke * 0.4                // just above baseline
+  const slotW = rx - iRX + stroke + 10      // wide enough to carve past outer
+  const slotH = barY - stroke * 0.9 - slotY
+  rectHole(p, slotX, slotY, slotW, slotH)
 
   return { advance: LSB + w + RSB }
 }
 
 // ---------------------------------------------------------------------------
-// f — ascender stem with top hook and crossbar at x-height.
+// f — ascender stem with a small top hook (curving right/up) and a crossbar
+//     at x-height. Right-facing hook is the bookish Plantin style.
 // ---------------------------------------------------------------------------
 const f: Drawer = (p) => {
   const w = XH * 0.70
   const x0 = LSB
-  const stemCx = x0 + LC_STEM / 2 + 14
-  const stroke = LC_THIN + 32
+  const stemCx = x0 + LC_STEM / 2 + 20
+  const stroke = LC_THIN + 30
 
   // Main stem up through ascender.
-  rect(p, stemCx - LC_STEM / 2, 0, LC_STEM, ASCENDER - 40)
+  rect(p, stemCx - LC_STEM / 2, 0, LC_STEM, ASCENDER - 20)
 
-  // Top curl: a small half-ring arcing left then down at the very top.
-  halfRing(p, stemCx - 14, ASCENDER - 40, 28, 40, stroke, 'top')
-  // End drop on hook.
-  dropTerminal(p, stemCx - 42, ASCENDER - 54, THIN + 20, THIN + 28)
+  // Top hook: top halfRing opening LEFT (stem is on the left side of hook),
+  // so the hook curls up and to the right from the stem top.
+  const hookCY = ASCENDER - 20
+  const hookRX = 34
+  const hookRY = 30
+  halfRing(p, stemCx + hookRX - LC_STEM / 2, hookCY, hookRX, hookRY, stroke, 'top')
+  // Drop terminal at the right end of the hook.
+  dropTerminal(p, stemCx + hookRX * 2 - LC_STEM / 2 - 4, hookCY + hookRY - stroke * 0.5, THIN + 18, THIN + 26)
 
   // Crossbar at x-height.
-  rect(p, stemCx - LC_STEM / 2 - 30, XH - 14, LC_STEM + 48, THIN + 18)
+  rect(p, stemCx - LC_STEM / 2 - 26, XH - 12, LC_STEM + 46, THIN + 18)
 
-  // Foot serif.
   lcFoot(p, stemCx, LC_STEM, 0, { side: 'bottom' })
 
   return { advance: LSB + w + RSB }
