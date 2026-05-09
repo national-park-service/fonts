@@ -40,7 +40,7 @@ async function buildFamilyCss(id: FamilyId, urlPrefix = '../fonts'): Promise<str
     lines.push(
       '@font-face {',
       `  font-family: "${meta.display}";`,
-      `  src: url("${url}/woff2/${stem}.woff2") format("woff2-variations"),`,
+      `  src: url("${url}/woff2/${stem}.woff2") format("woff2"),`,
       `       url("${url}/woff/${stem}.woff") format("woff-variations"),`,
       `       url("${url}/ttf/${stem}.ttf") format("truetype-variations");`,
       '  font-weight: 100 900;',

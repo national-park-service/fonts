@@ -59,7 +59,7 @@ async function buildCss(id: FamilyId): Promise<string> {
       '/* Variable — wght axis 100–900, preferred. */',
       '@font-face {',
       `  font-family: "${meta.display}";`,
-      `  src: url("./fonts/woff2/${meta.file}[wght].woff2") format("woff2-variations"),`,
+      `  src: url("./fonts/woff2/${meta.file}[wght].woff2") format("woff2"),`,
       `       url("./fonts/woff/${meta.file}[wght].woff") format("woff-variations"),`,
       `       url("./fonts/ttf/${meta.file}[wght].ttf") format("truetype-variations");`,
       '  font-weight: 100 900;',

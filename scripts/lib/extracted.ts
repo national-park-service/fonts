@@ -2,7 +2,7 @@
  * Shared infrastructure for families built from `_extract-source.ts`
  * snapshots (sources/<family>/outlines*.json). Handles loading,
  * float→int rounding, name-table branding, and the OTF/TTF/WOFF/WOFF2
- * write side — all via `ts-fonts` (no opentype.js, no wawoff2 dep).
+ * write side — all via `ts-fonts`.
  *
  * Each family script:
  *   1. Loads one or more outlines.json files via `loadOutlines`.

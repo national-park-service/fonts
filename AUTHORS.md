@@ -15,11 +15,11 @@ Fonts contributors.
 
 ## Tools
 
-- [opentype.js](https://github.com/opentypejs/opentype.js) — font
-  construction and serialization.
-- [wawoff2](https://github.com/fetiska/wawoff2) — WOFF2 compression.
-- [@resvg/resvg-js](https://github.com/yisibl/resvg-js) — specimen PNG
-  rendering.
+- [ts-fonts](https://github.com/stacksjs/ts-fonts) — font construction,
+  serialization, and WOFF2 compression.
+- [ts-png](https://github.com/stacksjs/ts-png) and
+  [ts-svg](https://github.com/stacksjs/ts-svg) — specimen and source asset
+  rendering support.
 
 ## Maintainers
 

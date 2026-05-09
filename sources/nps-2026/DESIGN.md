@@ -79,9 +79,8 @@ Source files:
 Variable-font merging, TTF reading/writing, and static instance
 generation are all provided by
 [`ts-fonts`](https://github.com/stacksjs/ts-fonts) —
-`bun link`-ed during development. Replaces the previous
-`fonteditor-core` (JS) + `fontTools` (Python) combo with a single
-TypeScript dependency.
+`bun link`-ed during development. Replaces the previous mixed JavaScript
+and Python toolchain with a single TypeScript dependency.
 
 ## Verification
 

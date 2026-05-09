@@ -10,7 +10,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { buildFontFromGlyphs, encodeWOFF2Native, OTFWriter, OTGlyph, Path, type Glyph } from 'ts-fonts'
+import { buildFontFromGlyphs, encodeWOFF2Native, OTFWriter, OTGlyph, Path, TTFWriter, type Glyph } from 'ts-fonts'
 import { sfntToWoff } from './lib/woff.ts'
 
 const ROOT = resolve(import.meta.dir, '..')
@@ -952,8 +952,9 @@ async function build() {
     licenseURL: 'https://openfontlicense.org',
   })
 
+  const ttfBuf = Buffer.from(new TTFWriter().write(ttf))
+  const ttfAb = ttfBuf.buffer.slice(ttfBuf.byteOffset, ttfBuf.byteOffset + ttfBuf.byteLength) as ArrayBuffer
   const otfBuf = Buffer.from(new OTFWriter({ fontName: 'NPSSymbols-Regular' }).write(ttf))
-  const otfAb = otfBuf.buffer.slice(otfBuf.byteOffset, otfBuf.byteOffset + otfBuf.byteLength) as ArrayBuffer
 
   await mkdir(resolve(FONTS, 'otf'), { recursive: true })
   await mkdir(resolve(FONTS, 'ttf'), { recursive: true })
@@ -962,9 +963,9 @@ async function build() {
   void dirname
 
   await writeFile(resolve(FONTS, 'otf', 'NPSSymbols-Regular.otf'), otfBuf)
-  await writeFile(resolve(FONTS, 'ttf', 'NPSSymbols-Regular.ttf'), otfBuf)
-  await writeFile(resolve(FONTS, 'woff', 'NPSSymbols-Regular.woff'), sfntToWoff(otfBuf))
-  const woff2Buf = Buffer.from(await encodeWOFF2Native(otfAb))
+  await writeFile(resolve(FONTS, 'ttf', 'NPSSymbols-Regular.ttf'), ttfBuf)
+  await writeFile(resolve(FONTS, 'woff', 'NPSSymbols-Regular.woff'), sfntToWoff(ttfBuf))
+  const woff2Buf = Buffer.from(await encodeWOFF2Native(ttfAb))
   await writeFile(resolve(FONTS, 'woff2', 'NPSSymbols-Regular.woff2'), woff2Buf)
 
   // OTGlyph imported but not used at runtime (kept for API symmetry).

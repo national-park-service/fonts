@@ -9,8 +9,8 @@ PROJECT
 NPS Fonts — original open-source typefaces inspired by U.S. National
 Park Service signage. Independent project, not affiliated with the NPS.
 
-All four families are drawn from scratch using opentype.js (no OFL
-forks). They share a visual system tuned for NPS wayfinding aesthetics:
+All four families are drawn from scratch and built with the in-house
+ts-fonts toolchain (no OFL forks). They share a visual system tuned for NPS wayfinding aesthetics:
 routed-redwood display caps, old-style serif text, rounded trailhead
 script, and a pictograph icon set.
 
@@ -85,7 +85,7 @@ Reserved Font Names: "NPS 2026", "Redwood Serif",
 ACKNOWLEDGEMENTS
 ----------------
 NPS Fonts contributors — original parametric glyph drawings.
-opentype.js (https://github.com/opentypejs/opentype.js) — OpenType
-font construction and serialization.
-wawoff2 — WOFF2 compression.
-@resvg/resvg-js — specimen PNG rendering.
+ts-fonts (https://github.com/stacksjs/ts-fonts) — OpenType construction,
+serialization, and WOFF2 compression.
+ts-png and ts-svg (https://github.com/stacksjs) — specimen and source asset
+rendering support.

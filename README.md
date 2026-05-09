@@ -216,9 +216,8 @@ nps-fonts/
 ## How the families are built
 
 The fonts are built in pure TypeScript via
-[`ts-fonts`](https://github.com/stacksjs/ts-fonts) and
-[`opentype.js`](https://github.com/opentypejs/opentype.js) — no Python
-toolchain required.
+[`ts-fonts`](https://github.com/stacksjs/ts-fonts) — no Python toolchain or
+third-party font serialization/compression dependency required.
 
 Five of the six families load their geometry from JSON files under
 `sources/<family>/outlines*.json` (extracted once via

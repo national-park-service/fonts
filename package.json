@@ -30,6 +30,7 @@
     "typecheck": "bunx --bun tsc --noEmit",
     "clean": "rm -rf fonts/**/{otf,ttf,woff,woff2,variable}/*.* web/dist specimens/*.pdf packages/*/dist",
     "release": "bun run build && bun run web && bun run pack:all",
+    "release:patch": "bunx --bun bumpx patch --recursive --yes",
     "pack:all": "bun run scripts/pack.ts",
     "test": "bun test",
     "verify": "bun run scripts/_verify-exact.ts"
