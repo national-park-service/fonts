@@ -42,9 +42,9 @@
     "typescript": "^5.6.0"
   },
   "dependencies": {
-    "ts-fonts": "link:ts-fonts",
-    "ts-png": "link:ts-png",
-    "ts-svg": "link:ts-svg"
+    "@stacksjs/ts-png": "https://registry.pantry.dev/@stacksjs/ts-png@15dffef",
+    "@stacksjs/ts-svg": "https://registry.pantry.dev/@stacksjs/ts-svg@2940b3d",
+    "ts-fonts": "https://registry.pantry.dev/ts-fonts@86f9b09"
   },
   "engines": {
     "bun": ">=1.1.0",

@@ -11,6 +11,9 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +30,9 @@ jobs:
       - name: Read version from tag
         id: ver
         run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Build fonts
         run: bun run build
@@ -57,12 +63,21 @@ jobs:
             OFL.txt
           release-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Publish packages to Pantry
+        if: ${{ env.PANTRY_REGISTRY_TOKEN != '' || env.PANTRY_TOKEN != '' }}
+        run: pantry publish:commit './packages/*'
+
       - name: Publish npm packages
+        if: ${{ env.NPM_TOKEN != '' }}
         run: |
           for dir in packages/*/; do
             pkg=$(basename "$dir")
-            echo "→ Publishing @nps-fonts/$pkg via Pantry"
+            echo "Publishing @nps-fonts/$pkg via Pantry"
             (cd "$dir" && pantry publish --npm --access public)
           done
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip npm publish
+        if: ${{ env.NPM_TOKEN == '' }}
+        run: echo "NPM_TOKEN is not configured; published Pantry commit packages and GitHub release only."

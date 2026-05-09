@@ -14,8 +14,8 @@
  *
  * Exits 0 on success, 1 on any unexpected mismatch.
  */
-import { Resvg } from 'ts-svg'
-import png from 'ts-png'
+import { Resvg } from '@stacksjs/ts-svg'
+import png from '@stacksjs/ts-png'
 import { readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'

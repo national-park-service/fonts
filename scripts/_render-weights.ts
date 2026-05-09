@@ -9,7 +9,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { parse } from 'ts-fonts'
-import { Resvg } from 'ts-svg'
+import { Resvg } from '@stacksjs/ts-svg'
 import { instantiateVariable } from './nps-2026.ts'
 
 const ROOT = resolve(import.meta.dir, '..')

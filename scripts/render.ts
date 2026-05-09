@@ -9,7 +9,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { Resvg } from 'ts-svg'
+import { Resvg } from '@stacksjs/ts-svg'
 import { parse } from 'ts-fonts'
 import { ALL_FAMILIES, FAMILY_DISPLAY, type FamilyId } from './lib/common.ts'
 
