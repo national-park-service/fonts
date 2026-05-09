@@ -1,6 +1,6 @@
 {
   "name": "@nps-fonts/all",
-  "version": "0.7.0",
+  "version": "0.0.0",
   "description": "NPS Fonts meta-package — installs all 6 families.",
   "license": "OFL-1.1",
   "homepage": "https://github.com/national-park-service/fonts",
@@ -24,11 +24,11 @@
     "*.css"
   ],
   "dependencies": {
-    "@nps-fonts/nps-2026": "0.7.0",
-    "@nps-fonts/redwood-serif": "0.7.0",
-    "@nps-fonts/campmate-script": "0.7.0",
-    "@nps-fonts/nps-symbols": "0.7.0",
-    "@nps-fonts/sequoia-sans": "0.7.0",
-    "@nps-fonts/switchback": "0.7.0"
+    "@nps-fonts/nps-2026": "0.0.0",
+    "@nps-fonts/redwood-serif": "0.0.0",
+    "@nps-fonts/campmate-script": "0.0.0",
+    "@nps-fonts/nps-symbols": "0.0.0",
+    "@nps-fonts/sequoia-sans": "0.0.0",
+    "@nps-fonts/switchback": "0.0.0"
   }
 }

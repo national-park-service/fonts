@@ -1,6 +1,6 @@
 {
   "name": "@nps-fonts/monorepo",
-  "version": "0.7.1",
+  "version": "0.0.0",
   "private": true,
   "description": "Original open-source typefaces inspired by U.S. National Park Service signage — drawn from scratch",
   "license": "OFL-1.1",
@@ -30,7 +30,9 @@
     "typecheck": "bunx --bun tsc --noEmit",
     "clean": "rm -rf fonts/**/{otf,ttf,woff,woff2,variable}/*.* web/dist specimens/*.pdf packages/*/dist",
     "release": "bun run build && bun run web && bun run pack:all",
-    "release:patch": "bunx --bun bumpx patch --recursive --yes",
+    "release:patch": "bun run scripts/release-version.ts patch",
+    "release:minor": "bun run scripts/release-version.ts minor",
+    "release:major": "bun run scripts/release-version.ts major",
     "pack:all": "bun run scripts/pack.ts",
     "test": "bun test",
     "verify": "bun run scripts/_verify-exact.ts"
