@@ -13,7 +13,7 @@ jobs:
       id-token: write
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+      PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_REGISTRY_TOKEN || secrets.PANTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
