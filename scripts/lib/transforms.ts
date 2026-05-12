@@ -2,9 +2,8 @@
  * Composable geometric transforms for FontData.
  *
  * Each family runs its own pipeline of these primitives during the build
- * — that's how the committed source-of-truth JSON becomes a genuinely
- * derivative work modeled after public-lands signage tradition rather
- * than a verbatim re-emission of an upstream master.
+ * — that's how the committed source-of-truth JSON gets its family-specific
+ * finishing pass.
  *
  * Design notes:
  * - Transforms mutate `FontData` in place and recompute per-glyph bounding
@@ -182,36 +181,31 @@ function hashString(s: string): number {
  * Family transform pipelines — each modeled after a specific public-lands
  * signage genre.
  *
- * Tasteful by default: changes are small and have a defensible reference
- * in the signage tradition. Dial the magnitudes down for book use,
+ * Tasteful by default: changes are small and fit the intended visual
+ * system. Dial the magnitudes down for book use,
  * up for display/distressed cuts.
  */
 export const PIPELINES: Record<string, (data: FontData) => void> = {
   /**
    * Redwood Serif — old-style book serif, John Muir-era field journals
-   * and interpretive panels. Goal: stay book-readable, gain a faint
-   * "private press" tactility.
+   * and interpretive panels. Preserve the committed source outlines exactly.
    */
   'redwood-serif': (data) => {
-    // Sub-unit jitter on on-curve points only — every glyph mathematically
-    // distinct, visually unchanged. Stems and serifs stay crisp.
-    displaceCoords(data, 0.6, 'redwood-serif:v1', { onCurveOnly: true })
     roundAll(data)
   },
 
   /**
-   * Sequoia Sans — humanist sans for park field guides. Goal: slightly
-   * more "engraved" feel without losing humanist warmth.
+   * Sequoia Sans — humanist sans for park field guides. Preserve the
+   * committed source outlines exactly.
    */
   'sequoia-sans': (data) => {
-    displaceCoords(data, 0.7, 'sequoia-sans:v1', { onCurveOnly: true })
     roundAll(data)
   },
 
   /**
    * Campmate Script — rounded upright brush script for hand-painted
-   * trailhead boards. Preserve the source master exactly; its source data
-   * carries the corrected outlines, ligatures, and reference kerning.
+   * trailhead boards. Preserve the committed source exactly; its source data
+   * carries the corrected outlines, ligatures, and kerning.
    */
   'campmate-script': (data) => {
     roundAll(data)
@@ -219,28 +213,18 @@ export const PIPELINES: Record<string, (data: FontData) => void> = {
 
   /**
    * Switchback Regular — clean routed-trail caps modeled after
-   * router-cut redwood blade signs (e.g. NPS trailhead markers).
-   * Goal: subtle CNC-grid quantization signature.
+   * router-cut redwood blade signs (e.g. NPS trailhead markers). Preserve
+   * the committed source outlines exactly.
    */
   'switchback-clean': (data) => {
-    displaceCoords(data, 0.8, 'switchback-clean:v1', { onCurveOnly: true })
-    // Snap to a 4-unit grid — mimics the quantized step of a real CNC bit
-    // path. Reads as crispness, not chunkiness.
-    quantizeCoords(data, 4)
     roundAll(data)
   },
 
   /**
    * Switchback Rough — weathered backcountry sign cut, hand-routed look.
-   * Goal: visible chatter without losing legibility.
+   * Preserve the committed source outlines exactly.
    */
   'switchback-rough': (data) => {
-    // Larger displacement (~6u at UPM=1000) for the chatter look. Off-curve
-    // points displace too — gives the gentle path wobble of an aged sign.
-    displaceCoords(data, 6, 'switchback-rough:v1')
-    // Per-contour wobble adds the "outer rim and inner counter drifted
-    // independently" feel of a router that wandered between passes.
-    wobbleContours(data, 2.5, 'switchback-rough-contour:v1')
     roundAll(data)
   },
 

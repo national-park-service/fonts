@@ -42,7 +42,7 @@ const VERSION = 'Version 1.000'
 
 /**
  * Weight-axis masters. `offset` is the per-point normal-direction shift
- * applied to the pristine Regular outlines (Regular = 0). `wght` is both
+ * applied to the Regular outlines (Regular = 0). `wght` is both
  * the `wght` axis location and each master's OS/2 usWeightClass.
  */
 // Offsets chosen empirically: the source has some narrow features (S
@@ -101,7 +101,7 @@ async function loadPatchedData(): Promise<{ data: FontData, patched: string[], a
 
 function applyPatch(g: FontGlyph, patch: GlyphPatch) {
   if (patch.setContours) {
-    g.contours = cloneContours(patch.setContours)
+    g.contours = duplicateContours(patch.setContours)
     recomputeBounds(g)
   }
   if (patch.mapContours && g.contours) {
@@ -127,7 +127,7 @@ function applyPatch(g: FontGlyph, patch: GlyphPatch) {
   if (patch.leftSideBearing !== undefined) g.leftSideBearing = patch.leftSideBearing
 }
 
-function cloneContours(cs: Contour[]): Contour[] {
+function duplicateContours(cs: Contour[]): Contour[] {
   return cs.map(c => c.map(p => ({ x: p.x, y: p.y, onCurve: p.onCurve })))
 }
 
@@ -144,7 +144,7 @@ function additionToGlyph(a: GlyphAddition): FontGlyph {
     advanceWidth: a.advanceWidth,
     leftSideBearing: a.leftSideBearing ?? 0,
     xMin: 0, yMin: 0, xMax: 0, yMax: 0,
-    contours: cloneContours(a.contours),
+    contours: duplicateContours(a.contours),
   }
   recomputeBounds(g)
   if (a.leftSideBearing !== undefined) g.leftSideBearing = a.leftSideBearing

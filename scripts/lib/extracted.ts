@@ -1,8 +1,7 @@
 /**
- * Shared infrastructure for families built from `_extract-source.ts`
- * snapshots (sources/<family>/outlines*.json). Handles loading,
- * float→int rounding, name-table branding, and the OTF/TTF/WOFF/WOFF2
- * write side — all via `ts-fonts`.
+ * Shared infrastructure for families built from committed
+ * sources/<family>/outlines*.json data. Handles loading, float→int rounding,
+ * name-table branding, and the OTF/TTF/WOFF/WOFF2 write side via `ts-fonts`.
  *
  * Each family script:
  *   1. Loads one or more outlines.json files via `loadOutlines`.
@@ -44,7 +43,7 @@ export interface FontData {
   [k: string]: unknown
 }
 
-/** Load an extracted-source JSON, rounding all coordinates to integers. */
+/** Load committed outline JSON, rounding all coordinates to integers. */
 export async function loadOutlines(relPath: string): Promise<FontData> {
   const data: FontData = JSON.parse(await readFile(resolve(ROOT, relPath), 'utf8'))
   roundCoords(data)
@@ -70,11 +69,11 @@ export function roundCoords(data: FontData): void {
 }
 
 /**
- * Merge uppercase glyphs from a "Wide" master into a "Regular" base.
+ * Merge uppercase glyphs from one source file into a lowercase base.
  * The base is mutated in place.
  *
- * Use case: a starter master ships lowercase-style glyphs mapped to BOTH
- * 0x41-5A and 0x61-7A; a paired Wide master ships uppercase-style glyphs
+ * Use case: one source file has lowercase-style glyphs mapped to BOTH
+ * 0x41-5A and 0x61-7A; a paired source file has uppercase-style glyphs
  * also mapped to both case ranges. Merging gives a font where 0x61-7A
  * renders the lowercase shapes and 0x41-5A renders the uppercase shapes —
  * what users expect from a conventional font.
@@ -102,11 +101,11 @@ export function mergeUppercaseFrom(base: FontData, donor: FontData): void {
   }
 
   // For each unique donor glyph that owns at least one uppercase cp,
-  // copy it into base (renamed if necessary), then re-point the relevant
-  // codepoints from base's existing glyph to the new copy.
-  const copied = new Map<FontGlyph, FontGlyph>()
+  // add it to base (renamed if necessary), then re-point the relevant
+  // codepoints from base's existing glyph to the inserted glyph.
+  const donorCopies = new Map<FontGlyph, FontGlyph>()
   for (const [cp, donorG] of donorByCp) {
-    let copy = copied.get(donorG)
+    let copy = donorCopies.get(donorG)
     if (!copy) {
       copy = {
         name: donorG.name,
@@ -124,9 +123,9 @@ export function mergeUppercaseFrom(base: FontData, donor: FontData): void {
       // Rename if base already has this glyph name — keep upper distinct.
       if (base.glyf.some(g => g.name === copy!.name)) copy.name = `${copy.name}.upper`
       base.glyf.push(copy)
-      copied.set(donorG, copy)
+      donorCopies.set(donorG, copy)
     }
-    // Strip cp from any base glyph that currently owns it, then add to copy
+    // Strip cp from any base glyph that currently owns it, then add to copy.
     for (const g of base.glyf) {
       if (g === copy) continue
       if (g.unicode) g.unicode = g.unicode.filter(u => u !== cp)
@@ -184,9 +183,8 @@ export function brandNameTable(data: FontData, b: BrandingInput): void {
 
 /**
  * Emit a CFF .otf from a TTFObject. The contour data already lives on
- * the TTFObject, so we just rebrand the name table (already done by
- * `brandNameTable` upstream), run the optional `configure` hook (used
- * to author GSUB liga rules), and let `OTFWriter` produce the CFF bytes.
+ * the TTFObject, so we run the optional `configure` hook (used to author
+ * GSUB liga rules) and let `OTFWriter` produce the CFF bytes.
  */
 export function buildOtfFromTtfObject(
   data: TTFObject,
@@ -222,7 +220,7 @@ export interface WriteOutputs {
   outDir: string
   /** Filename stem, e.g. "RedwoodSerif-Regular". */
   fileStem: string
-  /** Source TTFObject (will be written verbatim as TTF). */
+  /** TTFObject to write. */
   ttfObject: TTFObject
   /** OTF branding (consumed by `OTFWriter` for the CFF Top DICT strings). */
   branding: BrandingInput

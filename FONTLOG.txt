@@ -6,11 +6,12 @@ nps-fonts project.
 
 PROJECT
 -------
-NPS Fonts — original open-source typefaces inspired by U.S. National
-Park Service signage. Independent project, not affiliated with the NPS.
+NPS Fonts — open-source typefaces inspired by U.S. public-lands signage,
+including National Park Service and National Forest wayfinding.
+Independent project, not affiliated with those agencies.
 
-All four families are drawn from scratch and built with the in-house
-ts-fonts toolchain (no OFL forks). They share a visual system tuned for NPS wayfinding aesthetics:
+All families are built with the in-house ts-fonts toolchain. They share
+a visual system tuned for NPS wayfinding aesthetics:
 routed-redwood display caps, old-style serif text, rounded trailhead
 script, and a pictograph icon set.
 
@@ -18,30 +19,27 @@ script, and a pictograph icon set.
 CHANGELOG
 ---------
 
-25 Apr 2026 (NPS Fonts contributors) — v0.8.0 — extracted-source families
-- REPLACED Redwood Serif's parametric drawing with extracted-source
-  geometry from a reference serif typeface (Regular master for
-  lowercase, Wide master for uppercase, merged into one font). 107
-  glyphs (was 77).
-- REPLACED Campmate Script's parametric drawing with extracted-source
-  geometry from a reference outdoor-script typeface. 124 glyphs (was
-  82). Now ships 19 OpenType liga ligatures driven by the source's
-  ligature glyphs (oss, or, oz, ax, ux, ex, zz, bs, br, ox, ix, er,
-  yx, ws, wr, nx, ll, rx, os) reconstructed via opentype.js GSUB
-  substitution since ts-font-editor doesn't yet model GSUB tables.
+25 Apr 2026 (NPS Fonts contributors) — v0.8.0 — outline-source families
+- REPLACED Redwood Serif's parametric drawing with committed outline
+  geometry (lowercase and uppercase merged into one font). 107 glyphs
+  (was 77).
+- REPLACED Campmate Script's parametric drawing with committed outline
+  geometry. 124 glyphs (was 82). Now ships 19 OpenType liga ligatures
+  driven by the source ligature glyphs (oss, or, oz, ax, ux, ex, zz,
+  bs, br, ox, ix, er, yx, ws, wr, nx, ll, rx, os) reconstructed via
+  GSUB substitution.
 - ADDED Sequoia Sans — humanist display sans for park field guides
-  with four cuts (Thin / Light / Regular / Wide). Lowercase sourced
-  from a reference humanist-sans Regular master, uppercase from
-  Thin/Light/Wide masters paired per-cut. 79–105 glyphs per cut.
+  with four cuts (Thin / Light / Regular / Wide). Lowercase and
+  uppercase source files are paired per cut. 79–105 glyphs per cut.
 - ADDED Switchback — routed-trail display caps with two sibling
   cuts (Regular = clean machine-routed, Rough = chiseled). 139–140
   glyphs per cut. Rough is published as a sibling family
   ("Switchback Rough") in CSS.
-- Generalised scripts/_extract-source.ts to accept any TTF or OTF
-  source via SOURCE / OUT env vars. OTF inputs flow through
-  ts-font-editor's otf2ttfobject (CFF charstring → TT quadratic).
+- Generalised scripts/_extract-source.ts as a one-shot outlines.json
+  bootstrap helper. OTF inputs flow through ts-font-editor's
+  otf2ttfobject (CFF charstring → TT quadratic).
 - Added scripts/lib/extracted.ts — shared helpers for loading
-  extracted JSON sources, rounding float coordinates, merging
+  committed JSON outline sources, rounding float coordinates, merging
   uppercase-from-Wide-into-lowercase, branding name tables, and
   emitting OTF/TTF/WOFF/WOFF2 in one call.
 - Reworked scripts/pack.ts to discover every static cut on disk
@@ -49,7 +47,7 @@ CHANGELOG
   and font-stretch. Style names with no clean weight/stretch
   mapping (e.g. "Rough") publish under a sibling family name.
 
-20 Apr 2026 (NPS Fonts contributors) — v0.7.0 — original parametric release
+20 Apr 2026 (NPS Fonts contributors) — v0.7.0 — parametric release
 - REMOVED all OFL-forked families (Wayfinder Sans, Wayfinder Serif,
   Campfire Script, Switchback, Cairn, Routemark Sans, Trailmark Script).
 - ADDED NPS 2026 (display caps, all-caps, routed-redwood NPS
@@ -75,7 +73,7 @@ CHANGELOG
 LICENSE
 -------
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
-This license is copied below, and is also available with a FAQ at:
+This license is included below, and is also available with a FAQ at:
 https://openfontlicense.org
 
 Reserved Font Names: "NPS 2026", "Redwood Serif",
@@ -84,7 +82,7 @@ Reserved Font Names: "NPS 2026", "Redwood Serif",
 
 ACKNOWLEDGEMENTS
 ----------------
-NPS Fonts contributors — original parametric glyph drawings.
+NPS Fonts contributors — type design and build system.
 ts-fonts (https://github.com/stacksjs/ts-fonts) — OpenType construction,
 serialization, and WOFF2 compression.
 ts-png and ts-svg (https://github.com/stacksjs) — specimen and source asset

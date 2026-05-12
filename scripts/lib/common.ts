@@ -250,8 +250,8 @@ const PARAMETRIC_SET: ReadonlySet<FamilyId> = new Set<FamilyId>([
   'switchback',
 ])
 
-/** Families that are forked from an upstream OFL source. (None remain — all four families are drawn from scratch.) */
+/** Families that require fork-specific packaging behavior. */
 export const FORKED_FAMILIES = ALL_FAMILIES.filter(f => !PARAMETRIC_SET.has(f)) as readonly FamilyId[]
 
-/** Families built parametrically from scratch (no upstream source). */
+/** Families handled by the normal package/build path. */
 export const PARAMETRIC_FAMILIES: readonly FamilyId[] = [...PARAMETRIC_SET]

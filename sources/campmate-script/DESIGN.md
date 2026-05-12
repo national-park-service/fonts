@@ -20,10 +20,8 @@ cursive pairs like `as`, `ks`, `ps`, `es`, `os`, `oss`, `nx`, `wx`,
 
 The source ships designer-drawn ligature glyphs named with the
 suffix `.liga` (e.g. `ll.liga`, `oss.liga`) and embedded GPOS kerning
-for the reference script rhythm. The
-[`_extract-source.ts`](../../scripts/_extract-source.ts) extractor
-preserves ligature glyph outlines but not the GSUB layout tables, so
-the build reconstructs the ligature feature from glyph names.
+for script rhythm. The build reconstructs the ligature feature from
+glyph names so the committed source data stays compact.
 
 [`scripts/campmate-script.ts`](../../scripts/campmate-script.ts)
 reconstructs the GSUB `liga` feature before writing outputs by parsing
@@ -47,8 +45,7 @@ font-variant-ligatures: common-ligatures;
 Source files:
 
 - [`outlines.json`](./outlines.json) — per-glyph snapshot plus GPOS
-  kerning source data. Generated once by
-  [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts).
+  kerning source data.
 - [`scripts/campmate-script.ts`](../../scripts/campmate-script.ts) —
   load outlines, brand the name table, emit OTF/TTF/WOFF/WOFF2 via
   [`scripts/lib/extracted.ts`](../../scripts/lib/extracted.ts).

@@ -6,12 +6,12 @@ its sans companion.
 
 ## Cuts
 
-The source ships its cases in separate weight masters:
+The committed source data keeps its cases in separate outline files:
 
-- `outlines.json`        — Regular (lowercase shapes only)
-- `outlines-light.json`  — Light (uppercase shapes only)
-- `outlines-thin.json`   — Thin (uppercase shapes only)
-- `outlines-wide.json`   — Wide (uppercase shapes only)
+- `outlines.json`        — lowercase shapes
+- `outlines-light.json`  — uppercase shapes for the Light cut
+- `outlines-thin.json`   — uppercase shapes for the Thin cut
+- `outlines-wide.json`   — uppercase shapes for the Wide cut
 
 `scripts/sequoia-sans.ts` produces four static cuts:
 
@@ -21,6 +21,9 @@ The source ships its cases in separate weight masters:
 | Wide     | 400         | 7 (wide)   | Regular lowercase + Wide upper   |
 | Light    | 300         | 5 (normal) | Light uppercase only (display)   |
 | Thin     | 100         | 5 (normal) | Thin uppercase only (display)    |
+
+The build preserves the source outlines and metrics exactly for each
+cut; no extra jitter or outline distortion is applied.
 
 ## Metrics
 
@@ -35,9 +38,7 @@ The source ships its cases in separate weight masters:
 
 Source files:
 
-- `outlines*.json` — pristine per-master snapshots, one per source
-  weight master. Generated once by
-  [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts).
+- `outlines*.json` — committed per-glyph source data for each cut.
 - [`scripts/sequoia-sans.ts`](../../scripts/sequoia-sans.ts) — for
   each cut, load the lowercase + uppercase masters, merge uppercase
   into the lowercase base via `mergeUppercaseFrom`, brand, emit

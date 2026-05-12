@@ -27,9 +27,8 @@ Rough` (rather than collide with Regular at the same weight/stretch).
 
 Source files:
 
-- `outlines-clean.json` and `outlines-rough.json` — pristine per-cut
-  snapshots. Generated once by
-  [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts).
+- `outlines-clean.json` and `outlines-rough.json` — committed per-cut
+  source data.
 - [`scripts/switchback.ts`](../../scripts/switchback.ts) — for each
   variant, load the outlines, brand, emit OTF/TTF/WOFF/WOFF2 via
   [`scripts/lib/extracted.ts`](../../scripts/lib/extracted.ts).

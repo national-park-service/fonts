@@ -1,6 +1,6 @@
 # @nps-fonts/all
 
-The full NPS Fonts suite — 6 original parametric families in one install.
+The full NPS Fonts suite — 6 public-lands-inspired families in one install.
 
 ```bash
 bun add @nps-fonts/all

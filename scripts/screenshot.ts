@@ -77,7 +77,7 @@ function readPngSize(buf: Uint8Array): { width: number, height: number } | null 
 async function main(): Promise<void> {
   const args = parseArgs()
 
-  // Accept http(s) URLs directly (necessary when the page references
+  // Accept http(s) URLs directly (necessary when the page uses
   // relative assets like font files — a data: URL has no base, so
   // url("./fonts/...") would 404 silently and the WebView falls back to
   // system fonts, hiding what the browser actually shows the user).

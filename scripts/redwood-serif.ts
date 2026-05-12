@@ -3,10 +3,8 @@
  * Redwood Serif — old-style transitional serif with stroke contrast.
  *
  * Outlines live in `sources/redwood-serif/outlines.json` (lowercase shapes)
- * and `sources/redwood-serif/outlines-wide.json` (uppercase shapes). The
- * source family ships its lowercase and uppercase shapes in two separate
- * weight masters; we merge them so Redwood Serif Regular carries both
- * cases at their correct codepoints.
+ * and `sources/redwood-serif/outlines-wide.json` (uppercase shapes). We merge
+ * them so Redwood Serif Regular carries both cases at their correct codepoints.
  */
 import { resolve } from 'node:path'
 import {

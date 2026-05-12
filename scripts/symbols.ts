@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * Build the NPS Symbols parametric icon font from scratch.
+ * Build the NPS Symbols parametric icon font.
  *
- * Drawn entirely with ts-fonts paths — no upstream source. Pictographs
+ * Pictographs are drawn with ts-fonts paths and
  * are placed at PUA codepoints (U+E000+) so they don't collide with text,
  * and also at semantic ASCII letters so users can type them naturally
  * (e.g. 'M' for mountain in a "NPS Symbols" font-family stack).
@@ -944,7 +944,7 @@ async function build() {
     fullName: 'NPS Symbols',
     version: 'Version 0.5.0',
     copyright: 'Copyright (c) 2026, NPS Fonts contributors. With Reserved Font Name "NPS Symbols".',
-    description: 'NPS Symbols — National Park Service-inspired pictograph font. Drawn from scratch.',
+    description: 'NPS Symbols — National Park Service-inspired pictograph font.',
     designer: 'NPS Fonts contributors',
     designerURL: 'https://github.com/national-park-service/fonts',
     manufacturer: 'NPS Fonts',

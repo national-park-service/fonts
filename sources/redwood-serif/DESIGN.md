@@ -6,16 +6,18 @@ field journal.
 
 ## Sources
 
-The source family ships its lowercase and uppercase shapes in two
-separate weight masters:
+The committed source data keeps lowercase and uppercase drawings in two
+separate outline files:
 
-- `outlines.json`      — extracted from the Regular master (lowercase shapes)
-- `outlines-wide.json` — extracted from the Wide master (uppercase shapes)
+- `outlines.json`      — lowercase shapes
+- `outlines-wide.json` — uppercase shapes
 
 `scripts/redwood-serif.ts` merges the two: the resulting Redwood Serif
 Regular has the lowercase shapes mapped to U+0061..7A (and Latin-1
 lowercase accented codepoints) and the uppercase shapes mapped to
 U+0041..5A (and Latin-1 uppercase accented codepoints).
+The build preserves those source outlines and metrics exactly; no
+extra jitter or outline distortion is applied.
 
 ## Metrics
 
@@ -41,12 +43,10 @@ dependencies.
 Source files:
 
 - [`outlines.json`](./outlines.json) and
-  [`outlines-wide.json`](./outlines-wide.json) — pristine per-glyph
-  snapshots (points, bounding boxes, advance widths) plus `head`,
-  `hhea`, `OS/2`, `post`, `cmap`, `name`, `maxp` tables. Generated
-  once by [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts)
-  and committed as the sole source of truth. No external font file is
-  read at build time.
+  [`outlines-wide.json`](./outlines-wide.json) — committed per-glyph
+  data (points, bounding boxes, advance widths) plus `head`, `hhea`,
+  `OS/2`, `post`, `cmap`, `name`, `maxp` tables. No external font file
+  is read at build time.
 - [`scripts/redwood-serif.ts`](../../scripts/redwood-serif.ts) — load
   both outlines, merge uppercase from Wide into the Regular base,
   brand the name table, emit OTF/TTF/WOFF/WOFF2 via the shared

@@ -2,9 +2,8 @@
 /**
  * Sequoia Sans — humanist display sans for park field guides.
  *
- * The source family ships its uppercase and lowercase shapes in separate
- * weight masters (Thin/Light/Wide carry uppercase only; Regular carries
- * lowercase only). This script merges each pairing into a static cut:
+ * The uppercase and lowercase drawings live in separate source files.
+ * This script merges each pairing into a static cut:
  *
  *   - Regular: Regular lowercase + Light uppercase
  *   - Wide:    Regular lowercase + Wide uppercase
@@ -30,7 +29,7 @@ const COPYRIGHT = `Copyright (c) 2026, NPS Fonts contributors. ${META.display} �
 const DESCRIPTION = `${META.display} — humanist sans cut for park field guides.`
 const VERSION = 'Version 1.000'
 
-// Source paths (relative to project root)
+// Source paths (relative to project root).
 const SRC_REGULAR = 'sources/sequoia-sans/outlines.json'
 const SRC_LIGHT = 'sources/sequoia-sans/outlines-light.json'
 const SRC_THIN = 'sources/sequoia-sans/outlines-thin.json'
@@ -40,7 +39,7 @@ interface CutSpec {
   styleName: string
   weightClass: number
   widthClass: number
-  /** Lowercase-glyph source path (or null = uppercase-only display cut). */
+  /** Lowercase-glyph source path, or null for uppercase-only display cuts. */
   lower: string | null
   /** Uppercase-glyph source path. */
   upper: string

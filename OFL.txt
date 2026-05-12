@@ -2,10 +2,11 @@ Copyright (c) 2026, NPS Fonts contributors (https://github.com/national-park-ser
 with Reserved Font Names "NPS 2026", "Redwood Serif",
 "Campmate Script", and "NPS Symbols".
 
-All four families are original parametric work — no upstream sources.
+Inspired by U.S. public-lands signage traditions, including
+National Park Service and National Forest wayfinding.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
-This license is copied below, and is also available with a FAQ at:
+This license is included below, and is also available with a FAQ at:
 https://openfontlicense.org
 
 

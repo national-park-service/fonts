@@ -1,17 +1,16 @@
 #!/usr/bin/env bun
 /**
- * One-shot bootstrapper: snapshot a TTF/OTF master into a portable JSON
+ * One-shot bootstrapper: snapshot a TTF/OTF design file into a portable JSON
  * (`outlines.json`) that the build pipeline consumes. Run once per family
  * to seed `sources/<family>/outlines.json`; that JSON is then the sole
  * committed source of truth and no external font is read at build time.
  *
- * Use this when starting a new family from your own master file or from
- * an OFL/PD reference that you have the right to ingest. The committed
- * outlines.json is what the build, the verification script, and any
- * downstream consumers read — the original source file is not required
- * (and is not redistributed by this repo).
+ * Use this when starting a new family from a design file that is allowed
+ * for the project. The committed outlines.json is what the build, the
+ * verification script, and downstream consumers read; the bootstrap file
+ * is not required at build time.
  *
- *   SOURCE=/abs/path/to/master.otf \
+ *   SOURCE=/abs/path/to/design.otf \
  *   OUT=sources/<family>/outlines.json \
  *     bun run scripts/_extract-source.ts
  *
@@ -28,7 +27,7 @@ const SOURCE = process.env.SOURCE
 const OUT = process.env.OUT ? resolve(ROOT, process.env.OUT) : undefined
 
 if (!SOURCE || !OUT) {
-  console.error('Usage: SOURCE=<path/to/master.otf|ttf> OUT=sources/<family>/outlines.json bun run scripts/_extract-source.ts')
+  console.error('Usage: SOURCE=<path/to/design.otf|ttf> OUT=sources/<family>/outlines.json bun run scripts/_extract-source.ts')
   process.exit(1)
 }
 
@@ -45,13 +44,12 @@ if (clean.HVAR?.raw) delete clean.HVAR
 if (clean.MVAR?.raw) delete clean.MVAR
 if (clean.gvar?.raw) delete clean.gvar
 
-// Strip identifying name-table fields. brandNameTable() repopulates these
-// at build time, so the committed JSON only needs to carry glyph + metric
-// data — never the source font's branding.
+// Strip name-table fields. brandNameTable() repopulates these at build time,
+// so the committed JSON only needs to carry glyph and metric data.
 clean.name = sanitizeNameTable(clean.name)
 
 await mkdir(dirname(OUT), { recursive: true })
 await writeFile(OUT, JSON.stringify(clean, null, 2))
 
-console.log(`✓ extracted ${ttf.glyf.length} glyphs + font tables → ${OUT}`)
+console.log(`✓ wrote ${ttf.glyf.length} glyphs + font tables → ${OUT}`)
 console.log(`  size: ${((await Bun.file(OUT).arrayBuffer()).byteLength / 1024).toFixed(1)}KB`)

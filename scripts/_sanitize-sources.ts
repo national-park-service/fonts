@@ -1,15 +1,14 @@
 #!/usr/bin/env bun
 /**
- * Sanitize committed `sources/<family>/outlines*.json` files: strip the
- * source font's `name`-table identifiers and any other strings that could
- * tie the snapshot back to a specific upstream font.
+ * Sanitize committed `sources/<family>/outlines*.json` files: strip
+ * name-table identifiers and other build-irrelevant strings.
  *
  * Why: outlines.json files are working JSON snapshots used to bootstrap
- * a family. Their `name`-table fields are *not* used at build time —
+ * a family. Their `name`-table fields are not used at build time —
  * `scripts/lib/extracted.ts#brandNameTable` rewrites every relevant
  * field with NPS Fonts branding before any artifact is emitted. Keeping
- * the original strings in the committed JSON serves no build purpose
- * and just adds noise. This script removes them.
+ * extra strings in the committed JSON serve no build purpose and just
+ * add noise. This script removes them.
  *
  *   bun run scripts/_sanitize-sources.ts            # all sources/**\/outlines*.json
  *   bun run scripts/_sanitize-sources.ts <path>     # single file

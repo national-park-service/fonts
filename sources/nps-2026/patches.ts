@@ -1,10 +1,10 @@
 /**
  * NPS 2026 — per-glyph patches.
  *
- * Each entry targets a glyph by `name` (the same name used in the extracted
- * outlines.json). Patches apply in order after the pristine outlines are
+ * Each entry targets a glyph by `name` (the same name used in
+ * outlines.json). Patches apply in order after the committed outlines are
  * loaded and before the font is written. Glyphs not listed here remain
- * byte-equivalent to the reference extraction.
+ * unchanged relative to the committed source data.
  *
  * Supported operations (compose freely in one entry):
  *
@@ -53,7 +53,7 @@ export const PATCHES: Record<string, GlyphPatch> = {
 
 /**
  * Brand-new glyphs to add on top of the source. Useful for codepoints the
- * reference doesn't cover (e.g., en-dash, smart quotes, ellipsis).
+ * base source does not cover (e.g., en-dash, smart quotes, ellipsis).
  */
 export const ADDITIONS: GlyphAddition[] = [
 ]

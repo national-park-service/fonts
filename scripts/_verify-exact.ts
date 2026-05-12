@@ -2,7 +2,7 @@
 /**
  * Self-contained verification for NPS 2026.
  *
- * Builds a "pristine" reference font from outlines.json and per-pixel diffs
+ * Builds a check font from outlines.json and per-pixel diffs
  * every covered codepoint against:
  *   1. the built static Regular TTF
  *   2. the variable TTF instantiated at wght=400 (default)
@@ -28,14 +28,14 @@ const OUTLINES = resolve(ROOT, 'sources', 'nps-2026', 'outlines.json')
 const BUILT_STATIC = resolve(ROOT, 'fonts', 'nps-2026', 'ttf', 'NPS_2026-Regular.ttf')
 const BUILT_VF = resolve(ROOT, 'fonts', 'nps-2026', 'ttf', 'NPS_2026[wght].ttf')
 
-// Build pristine TTF from outlines.json. Apply the same transform pipeline
-// the production build uses so the pristine reference reflects the intended
+// Build a source TTF from outlines.json. Apply the same transform pipeline
+// the production build uses so the check font reflects the intended
 // output for non-patched glyphs (otherwise every glyph would diff because
 // of the post-patch differentiation pass).
-const pristineData = JSON.parse(await readFile(OUTLINES, 'utf8')) as TTFObject
-PIPELINES['nps-2026']!(pristineData as unknown as Parameters<typeof PIPELINES['nps-2026']>[0])
-const pristineBuf = Buffer.from(new TTFWriter().write(pristineData))
-const pristine = parse(pristineBuf.buffer.slice(pristineBuf.byteOffset, pristineBuf.byteOffset + pristineBuf.byteLength))
+const sourceData = JSON.parse(await readFile(OUTLINES, 'utf8')) as TTFObject
+PIPELINES['nps-2026']!(sourceData as unknown as Parameters<typeof PIPELINES['nps-2026']>[0])
+const sourceBuf = Buffer.from(new TTFWriter().write(sourceData))
+const sourceFont = parse(sourceBuf.buffer.slice(sourceBuf.byteOffset, sourceBuf.byteOffset + sourceBuf.byteLength))
 
 // Parse built static TTF
 const builtStaticArrayBuf = await Bun.file(BUILT_STATIC).arrayBuffer()
@@ -74,7 +74,7 @@ const patchedNames = new Set([...Object.keys(PATCHES), ...ADDITIONS.map(a => a.n
 
 const covered: Array<{ cp: number, name: string }> = []
 for (let cp = 0x0020; cp <= 0xFFFF; cp++) {
-  const g = pristine.charToGlyph(String.fromCodePoint(cp))
+  const g = sourceFont.charToGlyph(String.fromCodePoint(cp))
   if (!g || g.index === 0) continue
   covered.push({ cp, name: g.name ?? `glyph${g.index}` })
 }
@@ -87,13 +87,13 @@ function check(target: Font, label: string): Result {
   for (const { cp, name } of covered) {
     if (patchedNames.has(name)) continue
     const ch = String.fromCodePoint(cp)
-    const { diff } = pixelsMatch(renderPNG(pristine, ch), renderPNG(target, ch))
+    const { diff } = pixelsMatch(renderPNG(sourceFont, ch), renderPNG(target, ch))
     if (diff === 0) exact++
     else mismatches.push({ cp, name, diff })
   }
-  const pristineCount = covered.length - [...patchedNames].filter(n => covered.some(c => c.name === n)).length
+  const sourceCount = covered.length - [...patchedNames].filter(n => covered.some(c => c.name === n)).length
   const status = mismatches.length === 0 ? '✓' : '✗'
-  console.log(`${status} ${label.padEnd(22)} ${exact} / ${pristineCount} pixel-exact`)
+  console.log(`${status} ${label.padEnd(22)} ${exact} / ${sourceCount} pixel-exact`)
   return { exact, mismatches }
 }
 

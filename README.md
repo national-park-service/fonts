@@ -1,12 +1,14 @@
 # NPS Fonts
 
-Six open-source typefaces inspired by U.S. National Park Service signage,
-posters, and trail markers. Released under the
+Six open-source typefaces inspired by U.S. public-lands signage,
+including National Park Service and National Forest wayfinding, posters,
+and trail markers. Released under the
 [SIL Open Font License 1.1](./OFL.txt).
 
 > **Disclaimer.** This project is independent and **not affiliated with, endorsed by, or sponsored by**
-> the U.S. National Park Service or the U.S. Department of the Interior. The names and aesthetics here
-> are *inspired by* the broader public-lands visual tradition. See [`DISCLAIMER.md`](./DISCLAIMER.md).
+> the U.S. National Park Service, U.S. Forest Service, or the U.S. Department of the Interior.
+> The names and aesthetics here are *inspired by* the broader public-lands visual tradition.
+> See [`DISCLAIMER.md`](./DISCLAIMER.md).
 
 ## Families
 
@@ -77,7 +79,7 @@ weather glyphs) at PUA codepoints `U+E000+` and ASCII shortcuts
 
 A humanist display sans for park field guides — high-contrast strokes
 and slightly extended uppercase. Four cuts pair lowercase + uppercase
-masters from the source family:
+drawings from the committed source files:
 
 | Cut     | OS/2 weight | OS/2 width | Notes                            |
 | ------- | ----------: | ---------: | -------------------------------- |
@@ -177,7 +179,7 @@ Each family's drawing script emits OTF / TTF / WOFF / WOFF2 under
 
 ```
 nps-fonts/
-├── sources/                    # per-family DESIGN.md + extracted outlines.json
+├── sources/                    # per-family DESIGN.md + committed outlines.json
 │   ├── nps-2026/               # outlines.json + patches.ts
 │   ├── redwood-serif/          # outlines.json + outlines-wide.json
 │   ├── campmate-script/        # outlines.json
@@ -187,7 +189,7 @@ nps-fonts/
 ├── packages/                   # generated npm packages (one per family + meta)
 ├── scripts/
 │   ├── build.ts                # build orchestrator
-│   ├── _extract-source.ts      # SOURCE=... OUT=... extracts outlines.json
+│   ├── _extract-source.ts      # one-shot outlines.json bootstrap helper
 │   ├── _verify-exact.ts        # NPS 2026 pixel-exact self-check
 │   ├── nps-2026.ts             # variable display caps build
 │   ├── redwood-serif.ts        # serif build (lowercase + Wide uppercase merge)
@@ -204,7 +206,7 @@ nps-fonts/
 │   └── lib/
 │       ├── common.ts           # shared family metadata + charset
 │       ├── cuts.ts             # per-family static-cut discovery
-│       ├── extracted.ts        # load + merge + brand + write helpers
+│       ├── extracted.ts        # outline load + merge + brand + write helpers
 │       ├── offset.ts           # contour offsetting for variable masters
 │       └── woff.ts             # WOFF 1.0 wrapper
 ├── web/                        # specimen / verify site source
@@ -219,9 +221,8 @@ The fonts are built in pure TypeScript via
 [`ts-fonts`](https://github.com/stacksjs/ts-fonts) — no Python toolchain or
 third-party font serialization/compression dependency required.
 
-Five of the six families load their geometry from JSON files under
-`sources/<family>/outlines*.json` (extracted once via
-`scripts/_extract-source.ts`). The build pipeline rounds floats to
+Five of the six families load their geometry from committed JSON files under
+`sources/<family>/outlines*.json`. The build pipeline rounds floats to
 integers, brands the `name` table, applies any per-family transforms
 (uppercase merging, variable-master offsetting, GSUB ligature
 reconstruction), and writes OTF / TTF / WOFF / WOFF2 in one pass via

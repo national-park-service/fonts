@@ -2,7 +2,7 @@
 
 Switchback — Routed-trail display caps with Clean and Rough sibling cuts — backcountry signage.
 
-Original parametric font, drawn from scratch by NPS Fonts contributors. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
+Open-source typeface inspired by U.S. public-lands signage traditions, including National Park Service and National Forest wayfinding. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
 
 ## Install
 

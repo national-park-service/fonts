@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Generate per-family npm packages under packages/<family>/.
- * All families are parametric originals — single regular weight.
+ * Emits package metadata, CSS, fonts, and license files for each family.
  */
 
 import { copyFile, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
@@ -120,7 +120,7 @@ function buildReadme(id: FamilyId): string {
 
 ${meta.display} — ${meta.tagline}
 
-Original parametric font, drawn from scratch by NPS Fonts contributors. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
+Open-source typeface inspired by U.S. public-lands signage traditions, including National Park Service and National Forest wayfinding. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
 
 ## Install
 
@@ -216,7 +216,7 @@ async function buildMetaPackage() {
     resolve(dir, 'README.md'),
     `# @nps-fonts/all
 
-The full NPS Fonts suite — ${ALL_FAMILIES.length} original parametric families in one install.
+The full NPS Fonts suite — ${ALL_FAMILIES.length} public-lands-inspired families in one install.
 
 \`\`\`bash
 bun add @nps-fonts/all

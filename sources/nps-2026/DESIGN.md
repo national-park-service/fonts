@@ -14,8 +14,8 @@ straight stems.
 | Descender   | -300  |
 | Glyph count | 153   |
 
-Advance widths, bounding boxes, and sidebearings are copied byte-compatibly
-for the Regular master.
+Advance widths, bounding boxes, and sidebearings are preserved exactly
+for the Regular source.
 
 ## Variable weight
 
@@ -24,7 +24,7 @@ NPS 2026 ships as a variable font with a single `wght` axis spanning
 instances (Thin / ExtraLight / Light / Regular / Medium / SemiBold / Bold
 / ExtraBold / Black) are exposed via `fvar`.
 
-The **Regular** master is point-for-point identical to `outlines.json`.
+The **Regular** master is point-compatible with `outlines.json`.
 **Thin** and **Black** masters are derived
 algorithmically by `scripts/lib/offset.ts`: every contour point is shifted
 along its perpendicular normal by a fixed em-unit offset, with the winding
@@ -57,14 +57,14 @@ The entire pipeline is pure TypeScript — no external binary dependencies.
 
 Source files:
 
-- [`outlines.json`](./outlines.json) — pristine per-glyph snapshot (points,
+- [`outlines.json`](./outlines.json) — committed per-glyph source data (points,
   bounding boxes, advance widths) plus `head`, `hhea`, `OS/2`, `post`,
-  `cmap`, `maxp`, `gasp` tables. Generated once by
+  `cmap`, `maxp`, `gasp` tables. Bootstrapped by
   [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts) and
   committed as the sole source of truth. No external font file is read at
   build time.
 - [`patches.ts`](./patches.ts) — per-glyph modifications applied on top of
-  the pristine outlines. Supports translate/scale/advance-width/LSB edits,
+  the committed outlines. Supports translate/scale/advance-width/LSB edits,
   full contour replacement, and new-glyph additions.
 - [`scripts/nps-2026.ts`](../../scripts/nps-2026.ts) — the build: load
   outlines → apply patches → derive Thin/Black masters via contour
@@ -85,7 +85,7 @@ and Python toolchain with a single TypeScript dependency.
 ## Verification
 
 [`scripts/_verify-exact.ts`](../../scripts/_verify-exact.ts) builds a
-pristine reference font directly from `outlines.json` and per-pixel diffs
+check font directly from `outlines.json` and per-pixel diffs
 every covered codepoint against:
 
 1. the built static Regular TTF;

@@ -1,6 +1,6 @@
 /**
  * Point-compatible contour offsetting used to derive extra weight masters
- * from a single source master. Every contour keeps its original point count;
+ * from a single source. Every contour keeps its original point count;
  * each point is shifted along the contour's outward normal by ±d em units.
  *
  * Caveats — this is a purely geometric weight derivation. It produces usable
@@ -32,8 +32,7 @@ function signedArea(contour: Contour): number {
  *   - 'ccw': counter-clockwise in y-up (most fonts produced by
  *     modern tools like Glyphs, RoboFont).
  *   - 'cw':  clockwise in y-up (common in fonts exported from y-down
- *     tooling like FontLab classic or older TrueType pipelines — the
- *     NPS 1935 reference is in this camp).
+ *     tooling like FontLab classic or older TrueType pipelines).
  *
  * Holes always have the opposite winding from outer.
  */
@@ -104,7 +103,7 @@ export function offsetContour(contour: Contour, d: number, outerWinding: OuterWi
 
 /**
  * Offset every contour in a glyph by `d`. Composite glyphs (without their
- * own contours) are left untouched — they compose from referenced glyphs
+ * own contours) are left untouched — they compose from component glyphs
  * which will themselves be offset.
  */
 export function offsetContours(

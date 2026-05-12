@@ -274,7 +274,7 @@ async function indexHtml(): Promise<string> {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NPS Fonts — original typefaces inspired by U.S. national parks</title>
-  <meta name="description" content="Original open-source typefaces inspired by U.S. National Park Service signage. Drawn from scratch, released under SIL OFL 1.1.">
+  <meta name="description" content="Open-source typefaces inspired by U.S. public-lands signage, including National Park Service and National Forest wayfinding. Released under SIL OFL 1.1.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23b04a2e' d='M32 4 L60 56 L4 56 Z'/%3E%3C/svg%3E">
   ${fontFaceImports}
   <link rel="stylesheet" href="./assets/css/main.css">
