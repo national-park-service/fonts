@@ -1,6 +1,6 @@
 # @nps-fonts/nps-symbols
 
-NPS Symbols — Original parametric pictograph icon font — 23 NPS-themed symbols.
+NPS Symbols — Public-lands-inspired pictograph icon font — 23 NPS-themed symbols.
 
 Open-source typeface inspired by U.S. public-lands signage traditions, including National Park Service and National Forest wayfinding. Released under the [SIL Open Font License 1.1](./LICENSE). **Independent project, not affiliated with the U.S. National Park Service.**
 

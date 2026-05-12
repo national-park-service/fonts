@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Quantify how much the family transform pipelines actually change the
- * outlines vs the (sanitized) source JSON. Used as the safety-metric
+ * outlines against the sanitized source JSON. Used as the safety-metric
  * report after design-pass changes.
  *
  *   bun run scripts/_measure-transforms.ts

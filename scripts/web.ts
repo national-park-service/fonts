@@ -436,7 +436,7 @@ async function familyPageHtml(id: FamilyId): Promise<string> {
       <h1 style="font-family: '${meta.display}'${extraStyle}">${meta.hero}</h1>
       <p class="lede">${meta.pangram}</p>
       <div class="pills">
-        <span class="pill">Original parametric</span>
+        <span class="pill">Public-lands inspired</span>
         <span class="pill">OTF · TTF · WOFF · WOFF2</span>
         <span class="pill">OFL-1.1</span>
       </div>

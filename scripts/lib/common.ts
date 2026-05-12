@@ -215,7 +215,7 @@ export const FAMILY_DISPLAY: Record<FamilyId, FamilyMeta> = {
   'nps-symbols': {
     display: 'NPS Symbols',
     file: 'NPSSymbols',
-    tagline: 'Original parametric pictograph icon font — 23 NPS-themed symbols.',
+    tagline: 'Public-lands-inspired pictograph icon font — 23 NPS-themed symbols.',
     hero: 'AMTFP',
     pangram: 'AMTFPCSLW*BHODX',
     weight: 400,
