@@ -1,8 +1,10 @@
 # Campmate Script — Design brief
 
 A rounded upright script with brush-style contrast. Hand-painted
-trailhead board lettering. Ships with 19 OpenType `liga` ligatures
-designed into the source.
+trailhead board lettering. Ships with OpenType `liga` ligatures
+designed into the source, plus source-level GPOS kerning for dense
+cursive pairs like `as`, `ks`, `ps`, `es`, `os`, `oss`, `nx`, `wx`,
+`yx`, and `yz`.
 
 ## Metrics
 
@@ -16,17 +18,20 @@ designed into the source.
 
 ## Ligatures
 
-The source ships 19 designer-drawn ligature glyphs named with the
-suffix `.liga` (e.g. `oo.liga`, `ll.liga`, `oss.liga`). The
+The source ships designer-drawn ligature glyphs named with the
+suffix `.liga` (e.g. `ll.liga`, `oss.liga`) and embedded GPOS kerning
+for the reference script rhythm. The
 [`_extract-source.ts`](../../scripts/_extract-source.ts) extractor
-preserves the ligature glyph outlines but not the GSUB layout tables
-(`ts-fonts` does not yet model GSUB — it's on the TODO list).
+preserves ligature glyph outlines but not the GSUB layout tables, so
+the build reconstructs the ligature feature from glyph names.
 
 [`scripts/campmate-script.ts`](../../scripts/campmate-script.ts)
-reconstructs the GSUB `liga` feature at OTF-write time by parsing
+reconstructs the GSUB `liga` feature before writing outputs by parsing
 each ligature glyph name back into its component letters and
-registering an opentype.js substitution rule. So `oo` → `oo.liga`,
-`ll` → `ll.liga`, `oss` → `oss.liga`, etc.
+registering an opentype.js substitution rule. So `ll` → `ll.liga`,
+`os` → `os.liga`, `oss` → `oss.liga`, `yx` → `yx.liga`, etc. Dense
+non-ligature joins connect through source kerning rather than added
+bridge strokes or build-time outline patches.
 
 To enable in CSS:
 
@@ -41,11 +46,12 @@ font-variant-ligatures: common-ligatures;
 
 Source files:
 
-- [`outlines.json`](./outlines.json) — pristine per-glyph snapshot.
-  Generated once by
+- [`outlines.json`](./outlines.json) — per-glyph snapshot plus GPOS
+  kerning source data. Generated once by
   [`scripts/_extract-source.ts`](../../scripts/_extract-source.ts).
 - [`scripts/campmate-script.ts`](../../scripts/campmate-script.ts) —
   load outlines, brand the name table, emit OTF/TTF/WOFF/WOFF2 via
   [`scripts/lib/extracted.ts`](../../scripts/lib/extracted.ts).
-  WOFF/WOFF2 are wrapped from the OTF (which carries the GSUB
-  ligature table) so browser-side ligatures work out of the box.
+  WOFF/WOFF2 are wrapped from the TTF, which carries the GSUB ligature
+  table and GPOS kerning so browser-side script spacing works out of
+  the box.

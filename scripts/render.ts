@@ -73,7 +73,7 @@ const SPECIMEN_SETS: Record<FamilyId, Specimen[]> = {
   'campmate-script': [
     { label: 'hero', text: 'Campmate', fontSize: 220 },
     { label: 'pangram', text: 'Welcome to Crooked River Camp', fontSize: 120 },
-    { label: 'ligatures', text: 'coffee hello little kittens essential', fontSize: 120 },
+    { label: 'ligatures', text: 'Stacks parks mossy wax next yz', fontSize: 120 },
     { label: 'lc', text: 'abcdefghijklmnopqrstuvwxyz', fontSize: 90 },
     { label: 'caps', text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', fontSize: 100 },
   ],

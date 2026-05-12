@@ -56,7 +56,7 @@ const SAMPLES: Record<FamilyId, Sample[]> = {
   ],
   'campmate-script': [
     { label: 'Hero', text: 'Campmate Script', size: 120 },
-    { label: 'Ligatures (liga on)', text: 'coffee · hello · little · kittens · essential', size: 56 },
+    { label: 'Ligatures (liga on)', text: 'Stacks · parks · mossy · wax · next · yx · yz', size: 56 },
     { label: 'Pangram', text: 'Welcome to Crooked River Camp', size: 56 },
     { label: 'Lowercase', text: 'abcdefghijklmnopqrstuvwxyz', size: 44 },
     { label: 'Caps', text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', size: 44 },

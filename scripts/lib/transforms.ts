@@ -210,13 +210,10 @@ export const PIPELINES: Record<string, (data: FontData) => void> = {
 
   /**
    * Campmate Script — rounded upright brush script for hand-painted
-   * trailhead boards. Goal: preserve calligraphic flow; only enough
-   * change to differentiate from the source master.
+   * trailhead boards. Preserve the source master exactly; its source data
+   * carries the corrected outlines, ligatures, and reference kerning.
    */
   'campmate-script': (data) => {
-    // Note: magnitudes ≤ 0.5 round back to source (integer rounding).
-    // 0.7 yields ~16% on-curve points moved by ±1u — script flow preserved.
-    displaceCoords(data, 0.7, 'campmate-script:v1', { onCurveOnly: true })
     roundAll(data)
   },
 

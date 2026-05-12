@@ -3,10 +3,11 @@
  * Campmate Script — rounded upright script with brush-style ligatures.
  *
  * Outlines live in `sources/campmate-script/outlines.json`. The source
- * carries 19 designer ligature glyphs (named `xy.liga`, `xyz.liga`) but
- * the extractor doesn't preserve GSUB. We rebuild the `liga` GSUB feature
- * via ts-fonts' Substitution helper by parsing each ligature glyph
- * name back into its component letters.
+ * carries designer ligature glyphs (named `xy.liga`, `xyz.liga`) plus
+ * source kerning data.
+ * The extractor doesn't preserve GSUB, so we rebuild the `liga` feature via
+ * ts-fonts' Substitution helper by parsing each ligature glyph name back into
+ * its component letters.
  */
 import { resolve } from 'node:path'
 import { Substitution, type TTFObject } from 'ts-fonts'
@@ -85,14 +86,13 @@ export async function buildCampmateScript() {
   }
   brandNameTable(data, branding)
 
-  let ligaCount = 0
+  const ttfObject = data as unknown as Parameters<typeof writeFamilyOutputs>[0]['ttfObject']
+  const ligaCount = addLigatureRules(ttfObject)
   const out = await writeFamilyOutputs({
     outDir: FONTS,
     fileStem: `${META.file}-Regular`,
-    ttfObject: data as unknown as Parameters<typeof writeFamilyOutputs>[0]['ttfObject'],
+    ttfObject,
     branding,
-    woffFromOtf: true,
-    configureOtf: (d) => { ligaCount = addLigatureRules(d) },
   })
 
   return { glyphCount: (data as FontData).glyf.length, ligaCount, ...out }
