@@ -13,7 +13,7 @@ jobs:
       id-token: write
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_REGISTRY_TOKEN || secrets.PANTRY_TOKEN }}
+      PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +64,7 @@ jobs:
           release-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish packages to Pantry
-        if: ${{ env.PANTRY_REGISTRY_TOKEN != '' || env.PANTRY_TOKEN != '' }}
+        if: ${{ env.PANTRY_TOKEN != '' }}
         run: pantry publish:commit './packages/*'
 
       - name: Publish npm packages
